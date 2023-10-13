@@ -13,4 +13,23 @@ const responseFailed = (res, status, reason) => {
   });
 };
 
-module.exports = { responseSuccess, responseFailed };
+const responseSuccessService = (data) => {
+  return {
+    result: RESPONSE_RESULT.SUCCESS,
+    ...data,
+  };
+};
+
+const responseFailedService = (reason) => {
+  return {
+    result: RESPONSE_RESULT.FAILED,
+    reason,
+  };
+};
+
+module.exports = {
+  responseSuccess,
+  responseFailed,
+  responseSuccessService,
+  responseFailedService,
+};

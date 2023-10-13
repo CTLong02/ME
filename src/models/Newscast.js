@@ -14,14 +14,12 @@ Newscast.init(
       allowNull: false,
     },
     signal: {
-      type: DataTypes.ENUM,
-      values: ["1", "2", "3", "4"],
+      type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: null,
     },
     strength: {
-      type: DataTypes.ENUM,
-      values: ["1", "2", "3", "4"],
+      type: DataTypes.INTEGER,
       allowNull: true,
       defaultValue: null,
     },

@@ -20,7 +20,7 @@ createTable();
 const client = require("./config/mqtt/connect");
 client.on("connect", () => {
   console.log("connect mqtt");
-  client.subscribe("#", () => {
+  client.subscribe("SM_EL_MT/#", () => {
     console.log("subribe");
   });
 });
@@ -32,6 +32,19 @@ client.on("message", (topic, payload) => {
     topic,
     payload.toString()
   );
+  const {
+    ID,
+    Conn,
+    Signal,
+    Strength,
+    Voltage,
+    Current,
+    Power,
+    Energy,
+    Temp,
+    Load,
+    Update,
+  } = payload.toString();
 });
 
 app.get("/", (req, res) => {
