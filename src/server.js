@@ -16,6 +16,7 @@ route(app);
 const { conectDB, createTable } = require("./config/database/connect");
 createTable();
 
+const { insertNewscast } = require("./services/Newscast.service");
 //mqtt
 const client = require("./config/mqtt/connect");
 client.on("connect", () => {
@@ -30,21 +31,9 @@ client.on("message", (topic, payload) => {
     new Date(Date.now()).toLocaleString("vn"),
     "Receive message",
     topic,
-    payload.toString()
+    JSON.parse(payload.toString())
   );
-  const {
-    ID,
-    Conn,
-    Signal,
-    Strength,
-    Voltage,
-    Current,
-    Power,
-    Energy,
-    Temp,
-    Load,
-    Update,
-  } = payload.toString();
+  insertNewscast(JSON.parse(payload.toString()));
 });
 
 app.get("/", (req, res) => {

@@ -59,6 +59,9 @@ Newscast.init(
       values: ["0", "1", "2", "3"],
       defaultValue: "0",
     },
+    datetime: {
+      type: DataTypes.DATE,
+    },
   },
   {
     modelName: "Newscast",
