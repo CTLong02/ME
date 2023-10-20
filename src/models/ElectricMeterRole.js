@@ -4,7 +4,7 @@ const { ROLE_EM } = require("../config/constant/constant_model");
 class ElectricMeterRole extends Model {}
 ElectricMeterRole.init(
   {
-    ElectricMeterRoleId: {
+    electricMeterRoleId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,

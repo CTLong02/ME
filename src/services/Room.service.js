@@ -1,6 +1,20 @@
 const Room = require("../models/Room");
-const createRoom = async (name) => {
-  const room = await Room.create({ name });
-  return room.dataValues;
+const createRoom = async ({ name, hoomId }) => {
+  try {
+    const room = await Room.create({ hoomId, name });
+    return room.dataValues;
+  } catch (error) {
+    return null;
+  }
 };
-module.exports = { createRoom };
+
+const findRoomByRoomId = async (roomId) => {
+  try {
+    const room = await Room.findOne({ where: { roomId } });
+    return room.dataValues;
+  } catch (error) {
+    return null;
+  }
+};
+
+module.exports = { createRoom, findRoomByRoomId };

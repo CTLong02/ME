@@ -9,7 +9,7 @@ const { TYPE_CONNECT } = require("../config/constant/constant_model");
 class ElectricMeter extends Model {}
 ElectricMeter.init(
   {
-    id: {
+    electricMeterId: {
       type: DataTypes.STRING,
       primaryKey: true,
     },

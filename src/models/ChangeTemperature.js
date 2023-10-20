@@ -3,7 +3,7 @@ const { sequelize } = require("../config/database/connect");
 class ChangeTemperature extends Model {}
 ChangeTemperature.init(
   {
-    id: {
+    changeTemperatureId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
