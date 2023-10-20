@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
-const ElectricMeter = require("./ElectricMeter");
+const ElectricMeterRole = require("./ElectricMeterRole");
 class Room extends Model {}
 Room.init(
   {
@@ -18,6 +18,6 @@ Room.init(
     sequelize,
   }
 );
-Room.hasMany(ElectricMeter, { foreignKey: { name: "roomId" } });
+Room.hasMany(ElectricMeterRole, { foreignKey: { name: "roomId" } });
 
 module.exports = Room;

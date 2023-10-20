@@ -74,12 +74,12 @@ const joinWithEM = async (accountId) => {
     const join = await Account.findOne({
       where: { accountId },
       attributes: { exclude: ["createdAt", "updatedAt"] },
-      include: [
-        {
-          model: ElectricMeter,
-          attributes: { exclude: ["accountId", "createdAt", "updatedAt"] },
-        },
-      ],
+      // include: [
+      //   {
+      //     model: ElectricMeter,
+      //     attributes: { exclude: ["accountId", "createdAt", "updatedAt"] },
+      //   },
+      // ],
     });
     return join.dataValues;
   } catch (error) {

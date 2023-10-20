@@ -5,6 +5,7 @@ const Notification = require("./Notification");
 const Newscast = require("./Newscast");
 const Timer = require("./Timer");
 const ChangeTemperature = require("./ChangeTemperature");
+const { TYPE_CONNECT } = require("../config/constant/constant_model");
 class ElectricMeter extends Model {}
 ElectricMeter.init(
   {
@@ -26,7 +27,7 @@ ElectricMeter.init(
     },
     conn: {
       type: DataTypes.ENUM,
-      values: ["1", "2", "3"],
+      values: [...Object.values(TYPE_CONNECT)],
       allowNull: false,
     },
     signal: {

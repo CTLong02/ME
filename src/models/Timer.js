@@ -9,8 +9,7 @@ Timer.init(
       autoIncrement: true,
     },
     actionId: {
-      type: DataTypes.ENUM,
-      values: ["0", "1"],
+      type: DataTypes.TINYINT,
       allowNull: false,
     },
     daily: {

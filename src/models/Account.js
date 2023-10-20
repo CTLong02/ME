@@ -2,6 +2,7 @@ const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const ElectricMeterRole = require("./ElectricMeterRole");
 const Home = require("./Hoom");
+const { ACCOUNT_LEVEL } = require("../config/constant/constant_model");
 class Account extends Model {}
 Account.init(
   {
@@ -37,9 +38,9 @@ Account.init(
     },
     level: {
       type: DataTypes.ENUM,
-      values: ["0", "1", "2", "3"],
+      values: [...Object.values(ACCOUNT_LEVEL)],
       allowNull: false,
-      defaultValue: "0",
+      defaultValue: ACCOUNT_LEVEL.user,
     },
   },
   {

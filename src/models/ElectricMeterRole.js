@@ -1,18 +1,19 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
+const { ROLE_EM } = require("../config/constant/constant_model");
 class ElectricMeterRole extends Model {}
 ElectricMeterRole.init(
   {
-    id: {
+    ElectricMeterRoleId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    roleCode: {
+    role: {
       type: DataTypes.ENUM,
       allowNull: false,
-      values: ["0", "1", "2"],
-      defaultValue: "0",
+      values: [...Object.values(ROLE_EM)],
+      defaultValue: ROLE_EM.read_only,
     },
   },
   {

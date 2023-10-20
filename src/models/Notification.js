@@ -21,7 +21,7 @@ Notification.init(
     datetime: DataTypes.DATE,
     type: {
       type: DataTypes.ENUM,
-      values: TYPE_NOTIFICATION,
+      values: [...Object.values(TYPE_NOTIFICATION)],
       allowNull: false,
     },
     readed: {

@@ -1,5 +1,9 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
+const {
+  TYPE_CONNECT_NUMBER,
+  UPDATE_FIRMWARE_NUMBER,
+} = require("../config/constant/constant_model");
 class Newscast extends Model {}
 Newscast.init(
   {
@@ -10,7 +14,7 @@ Newscast.init(
     },
     conn: {
       type: DataTypes.ENUM,
-      values: ["1", "2", "3"],
+      values: [...Object.values(TYPE_CONNECT_NUMBER)],
       allowNull: false,
     },
     signal: {
@@ -56,8 +60,8 @@ Newscast.init(
     update: {
       type: DataTypes.ENUM,
       allowNull: false,
-      values: ["0", "1", "2", "3"],
-      defaultValue: "0",
+      values: [...Object.values(UPDATE_FIRMWARE_NUMBER)],
+      defaultValue: UPDATE_FIRMWARE_NUMBER.not_update,
     },
     datetime: {
       type: DataTypes.DATE,
