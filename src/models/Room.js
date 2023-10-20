@@ -4,7 +4,7 @@ const ElectricMeter = require("./ElectricMeter");
 class Room extends Model {}
 Room.init(
   {
-    id: {
+    roomId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
@@ -18,6 +18,6 @@ Room.init(
     sequelize,
   }
 );
-// Room.hasMany(ElectricMeter, { foreignKey: { name: "roomId" } });
+Room.hasMany(ElectricMeter, { foreignKey: { name: "roomId" } });
 
 module.exports = Room;

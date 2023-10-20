@@ -8,7 +8,7 @@ const responseSuccess = (res, status, data) => {
 
 const responseFailed = (res, status, reason) => {
   return res.status(status).send({
-    result: RESPONSE_RESULT.SUCCESS,
+    result: RESPONSE_RESULT.FAILED,
     reason,
   });
 };

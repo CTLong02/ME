@@ -4,7 +4,7 @@ const Room = require("./Room");
 class Hoom extends Model {}
 Hoom.init(
   {
-    id: {
+    homeId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,

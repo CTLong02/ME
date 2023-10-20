@@ -3,7 +3,7 @@ const { sequelize } = require("../config/database/connect");
 class Timer extends Model {}
 Timer.init(
   {
-    id: {
+    timerId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,

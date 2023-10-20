@@ -1,10 +1,11 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const ElectricMeterRole = require("./ElectricMeterRole");
+const Home = require("./Hoom");
 class Account extends Model {}
 Account.init(
   {
-    id: {
+    accountId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
@@ -49,5 +50,6 @@ Account.init(
 
 Account.hasMany(ElectricMeterRole, { foreignKey: { name: "accountId" } });
 ElectricMeterRole.belongsTo(Account, { foreignKey: { name: "accountId" } });
+Account.hasMany(Home, { foreignKey: { name: "accountId" } });
 
 module.exports = Account;
