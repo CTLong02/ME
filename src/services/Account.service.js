@@ -1,5 +1,9 @@
+const { Sequelize } = require("sequelize");
 const Account = require("../models/Account");
+const Home = require("../models/Home");
+const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
+const ElectricMeterShare = require("../models/ElectricMeterShare");
 const { hashPw, comparePw } = require("../utils/helper/AccountHelper");
 const {
   responseSuccessService,
@@ -71,17 +75,36 @@ const findAccountByEmailAndPass = async (email, pass) => {
 
 const joinWithEM = async (accountId) => {
   try {
-    const join = await Account.findOne({
-      where: { accountId },
-      attributes: { exclude: ["createdAt", "updatedAt"] },
-      // include: [
-      //   {
-      //     model: ElectricMeter,
-      //     attributes: { exclude: ["accountId", "createdAt", "updatedAt"] },
-      //   },
-      // ],
+    const account = await Account.findOne({
+      where: { accountId: accountId },
+      include: [
+        {
+          model: Home,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+          order: [["createdAt", "ASC"]],
+          include: [
+            {
+              model: Room,
+              attributes: { exclude: ["createdAt", "updatedAt", "accountId"] },
+              order: [["createdAt", "ASC"]],
+              include: [
+                {
+                  model: ElectricMeter,
+                  order: [["createdAt", "ASC"]],
+                  attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
+                },
+                {
+                  model: ElectricMeterShare,
+                  order: [["createdAt", "ASC"]],
+                  attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
-    return join.dataValues;
+    return account.dataValues;
   } catch (error) {
     return null;
   }

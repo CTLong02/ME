@@ -50,8 +50,7 @@ Account.init(
   }
 );
 
-Account.hasMany(ElectricMeterShare, { foreignKey: { name: "accountId" } });
-Account.hasMany(Home, { foreignKey: { name: "accountId" } });
-Account.hasOne(Token, { foreignKey: { name: "accountId" } });
+Account.hasMany(Home, { as: "home", foreignKey: { name: "accountId" } });
+Account.hasOne(Token, { as: "token", foreignKey: { name: "accountId" } });
 
 module.exports = Account;

@@ -72,9 +72,11 @@ ElectricMeter.init(
 );
 
 ElectricMeter.hasMany(ElectricMeterShare, {
+  as: "electricMeterShare",
   foreignKey: { name: "electricMeterId" },
 });
 ElectricMeter.hasMany(Notification, {
+  as: "notification",
   foreignKey: { name: "electricMeterId" },
 });
 ElectricMeter.hasMany(Newscast, { foreignKey: { name: "electricMeterId" } });

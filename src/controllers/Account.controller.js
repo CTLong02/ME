@@ -1,7 +1,9 @@
+const { Sequelize } = require("sequelize");
 const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
+const ElectricMeterShare = require("../models/ElectricMeterShare");
 const {
   createAccountByEmailService,
   createAccountByPhoneNumberService,
@@ -162,7 +164,6 @@ const addEM = async (req, res) => {
       include: [
         {
           model: Home,
-          nested: false,
           attributes: { exclude: ["createdAt", "updatedAt"] },
           include: [
             {
@@ -175,12 +176,37 @@ const addEM = async (req, res) => {
     });
 
     if (roomId) {
-      const rooms = account.dataValues?.homes?.rooms.map((e) => e.roomId);
+      const rooms = account.dataValues?.Homes?.Rooms.map((e) => e.roomId);
       if (rooms && Array.isArray(rooms) && rooms.includes(roomId)) {
         findedEM.roomId = roomId;
         await findedEM.save();
+        const newAccount = await Account.findOne({
+          where: { accountId: req.account.accountId },
+          include: [
+            {
+              model: Home,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+              include: [
+                {
+                  model: Room,
+                  attributes: { exclude: ["createdAt", "updatedAt"] },
+                  include: [
+                    {
+                      model: ElectricMeter,
+                      attributes: { exclude: ["createdAt", "updatedAt"] },
+                    },
+                    {
+                      model: ElectricMeterShare,
+                      attributes: { exclude: ["createdAt", "updatedAt"] },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        });
         return responseSuccess(res, ResponseStatus.SUCCESS, {
-          homes: account.dataValues.homes,
+          homes: account.dataValues.Homes,
         });
       }
       return responseFailed(
@@ -191,7 +217,7 @@ const addEM = async (req, res) => {
     }
 
     if (homeId) {
-      const homes = account.dataValues?.homes.map((e) => e.homeId);
+      const homes = account.dataValues?.Homes.map((e) => e.homeId);
       if ((!homes && !Array.isArray(homes)) || homes.includes(homeId)) {
         return responseFailed(
           res,
@@ -206,14 +232,39 @@ const addEM = async (req, res) => {
       const room = await createRoom({
         name: !!roomname
           ? roomname
-          : `Phòng ${homeById.dataValues.rooms.length + 1}`,
+          : `Phòng ${homeById.dataValues.Rooms.length + 1}`,
         homeId,
       });
 
       findedEM.roomId = room.roomId;
       await findedEM.save();
+      const newAccount = await Account.findOne({
+        where: { accountId: req.account.accountId },
+        include: [
+          {
+            model: Home,
+            attributes: { exclude: ["createdAt", "updatedAt"] },
+            include: [
+              {
+                model: Room,
+                attributes: { exclude: ["createdAt", "updatedAt"] },
+                include: [
+                  {
+                    model: ElectricMeter,
+                    attributes: { exclude: ["createdAt", "updatedAt"] },
+                  },
+                  {
+                    model: ElectricMeterShare,
+                    attributes: { exclude: ["createdAt", "updatedAt"] },
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
       return responseSuccess(res, ResponseStatus.SUCCESS, {
-        homes: account.dataValues.homes,
+        homes: account.dataValues.Homes,
       });
     }
 
@@ -221,14 +272,41 @@ const addEM = async (req, res) => {
       accountId: req.account.accountId,
       name: !!homename
         ? homename
-        : `Nhà ${account.dataValues?.homes.length + 1}`,
+        : `Nhà ${account.dataValues?.Homes.length + 1}`,
     });
     const room = await createRoom({
       name: !!roomname ? roomname : "Phòng 1",
       homeId: home.homeId,
     });
+    findedEM.roomId = room.roomId;
+    await findedEM.save();
+    const newAccount = await Account.findOne({
+      where: { accountId: req.account.accountId },
+      include: [
+        {
+          model: Home,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+          include: [
+            {
+              model: Room,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+              include: [
+                {
+                  model: ElectricMeter,
+                  attributes: { exclude: ["createdAt", "updatedAt"] },
+                },
+                {
+                  model: ElectricMeterShare,
+                  attributes: { exclude: ["createdAt", "updatedAt"] },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
     return responseSuccess(res, ResponseStatus.SUCCESS, {
-      homes: account.dataValues.homes,
+      homes: newAccount.dataValues.Homes,
     });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
