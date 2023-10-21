@@ -6,7 +6,6 @@ module.exports.TYPE_NOTIFICATION = {
 module.exports.ROLE_EM = {
   read_only: "read_only",
   enable_control: "enable_control",
-  owner: "owner",
 };
 module.exports.TYPE_CONNECT = {
   _3G_4G: "3G/4G",

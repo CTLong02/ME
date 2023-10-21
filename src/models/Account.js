@@ -1,7 +1,8 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
-const ElectricMeterRole = require("./ElectricMeterRole");
+const ElectricMeterShare = require("./ElectricMeterShare");
 const Home = require("./Hoom");
+const Token = require("./Token");
 const { ACCOUNT_LEVEL } = require("../config/constant/constant_model");
 class Account extends Model {}
 Account.init(
@@ -49,8 +50,8 @@ Account.init(
   }
 );
 
-Account.hasMany(ElectricMeterRole, { foreignKey: { name: "accountId" } });
-ElectricMeterRole.belongsTo(Account, { foreignKey: { name: "accountId" } });
+Account.hasMany(ElectricMeterShare, { foreignKey: { name: "accountId" } });
 Account.hasMany(Home, { foreignKey: { name: "accountId" } });
+Account.hasOne(Token, { foreignKey: { name: "accountId" } });
 
 module.exports = Account;

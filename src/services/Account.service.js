@@ -61,6 +61,7 @@ const findAccountByEmailAndPass = async (email, pass) => {
     });
     const comparePass = comparePw(pass, account.pass);
     if (!!account && comparePass) {
+      console.log("account", account);
       return account.dataValues;
     }
     return null;

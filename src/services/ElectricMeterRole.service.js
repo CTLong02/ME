@@ -1,16 +1,4 @@
-const ElectricMeterRole = require("../models/ElectricMeterRole");
-const createEMRole = async ({ role, accountId, electricMeterId, roomId }) => {
-  try {
-    const electricMeterRole = await ElectricMeterRole.create({
-      role,
-      accountId,
-      electricMeterId,
-      roomId,
-    });
-    return electricMeterRole.dataValues;
-  } catch (error) {
-    return null;
-  }
-};
+const ElectricMeterShare = require("../models/ElectricMeterShare");
+const createEMRole = async ({ role, accountId, electricMeterId, roomId }) => {};
 
 module.exports = { createEMRole };

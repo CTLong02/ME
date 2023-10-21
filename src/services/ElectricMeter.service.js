@@ -1,4 +1,3 @@
-const { createEMRole } = require("./ElectricMeterRole.service");
 const { createHome } = require("./Home.service");
 const { createRoom } = require("./Room.service");
 const { ROLE_EM } = require("../config/constant/constant_model");
@@ -45,4 +44,4 @@ const findEMById = async (electricMeterId) => {
   }
 };
 
-module.exports = { addEM };
+module.exports = { addEM, findEMById };

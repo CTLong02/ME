@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
-const ElectricMeterRole = require("./ElectricMeterRole");
+const ElectricMeterShare = require("./ElectricMeterShare");
 const Notification = require("./Notification");
 const Newscast = require("./Newscast");
 const Timer = require("./Timer");
@@ -71,7 +71,7 @@ ElectricMeter.init(
   }
 );
 
-ElectricMeter.hasMany(ElectricMeterRole, {
+ElectricMeter.hasMany(ElectricMeterShare, {
   foreignKey: { name: "electricMeterId" },
 });
 ElectricMeter.hasMany(Notification, {

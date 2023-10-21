@@ -16,7 +16,7 @@ const insertNewscast = async (data) => {
       Update,
     } = data;
     await ElectricMeter.findOrCreate({
-      where: { id: ID },
+      where: { electricMeterId: ID },
       defaults: {
         electricMeterId: ID,
         ver: "1.0",

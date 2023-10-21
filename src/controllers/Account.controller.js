@@ -11,7 +11,9 @@ const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
-const StatusResponse = require("../config/constant/response_status");
+const ResponseStatus = require("../config/constant/response_status");
+const { createToken } = require("../utils/jwt");
+const { createAccessToken } = require("../services/Token.service");
 const moment = require("moment");
 
 //Tạo tài khoản
@@ -22,14 +24,14 @@ const signUp = async (req, res) => {
       (!email && !password && !phoneNumber) ||
       ((!email || !password) && phoneNumber)
     ) {
-      return responseFailed(res, StatusResponse.BAD_REQUEST, "Thiếu tham số");
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     if (phoneNumber) {
       const findedAccount = await findAccountByPhoneNumberService(phoneNumber);
       if (findedAccount) {
         return responseFailed(
           res,
-          StatusResponse.BAD_REQUEST,
+          ResponseStatus.BAD_REQUEST,
           "Tài khoản với số điện thoại này đã tồn tại"
         );
       }
@@ -37,7 +39,7 @@ const signUp = async (req, res) => {
         phoneNumber
       );
       if (createdAccount) {
-        return responseSuccess(res, StatusResponse.SUCCESS, {
+        return responseSuccess(res, ResponseStatus.SUCCESS, {
           account: createdAccount,
         });
       }
@@ -46,19 +48,19 @@ const signUp = async (req, res) => {
       if (findedAccount) {
         return responseFailed(
           res,
-          StatusResponse.BAD_REQUEST,
+          ResponseStatus.BAD_REQUEST,
           "Tài khoản với email này đã tồn tại"
         );
       }
       const createdAccount = await createAccountByEmailService(email, password);
       if (createdAccount) {
-        return responseSuccess(res, StatusResponse.SUCCESS, {
+        return responseSuccess(res, ResponseStatus.SUCCESS, {
           account: createdAccount,
         });
       }
     }
   } catch (error) {
-    responseFailed(res, StatusResponse.BAD_REQUEST, "Thiếu tham số");
+    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
@@ -70,7 +72,7 @@ const signIn = async (req, res) => {
       (!email && !password && !phoneNumber) ||
       ((!email || !password) && phoneNumber)
     ) {
-      return responseFailed(res, StatusResponse.BAD_REQUEST, "Thiếu tham số");
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     if (phoneNumber) {
       const findedAccountByPhone = await findAccountByPhoneNumberService(
@@ -79,7 +81,7 @@ const signIn = async (req, res) => {
       if (!findedAccountByPhone) {
         return responseFailed(
           res,
-          StatusResponse.BAD_REQUEST,
+          ResponseStatus.BAD_REQUEST,
           "Tài khoản với số điện thoại này không tồn tại"
         );
       }
@@ -88,7 +90,7 @@ const signIn = async (req, res) => {
       if (!findedAccountByEmail) {
         return responseFailed(
           res,
-          StatusResponse.BAD_REQUEST,
+          ResponseStatus.BAD_REQUEST,
           "Tài khoản với email này không tồn tại"
         );
       }
@@ -97,14 +99,21 @@ const signIn = async (req, res) => {
         password
       );
       if (!findedAccountByEmailAndPass) {
-        return responseFailed(res, StatusResponse.BAD_REQUEST, "Sai mật khẩu");
+        return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai mật khẩu");
       }
       const join = await joinWithEM(findedAccountByEmailAndPass.accountId);
-      return responseSuccess(res, StatusResponse.SUCCESS, { account: join });
+      const accessToken = createToken(findedAccountByEmailAndPass);
+      const token = await createAccessToken({
+        accountId: findedAccountByEmailAndPass.accountId,
+        token: accessToken,
+      });
+      return responseSuccess(res, ResponseStatus.SUCCESS, {
+        account: { ...join, accessToken },
+      });
     }
   } catch (error) {
     console.log(moment().format("LTS"), "error", error.message);
-    return responseFailed(res, StatusResponse.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
