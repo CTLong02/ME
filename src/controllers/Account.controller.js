@@ -1,3 +1,7 @@
+const Account = require("../models/Account");
+const Home = require("../models/Home");
+const Room = require("../models/Room");
+const ElectricMeter = require("../models/ElectricMeter");
 const {
   createAccountByEmailService,
   createAccountByPhoneNumberService,
@@ -6,7 +10,6 @@ const {
   findAccountByEmailAndPass,
   joinWithEM,
 } = require("../services/Account.service");
-const { RESPONSE_RESULT } = require("../config/constant/contants_app");
 const {
   responseFailed,
   responseSuccess,
@@ -14,6 +17,8 @@ const {
 const ResponseStatus = require("../config/constant/response_status");
 const { createToken } = require("../utils/jwt");
 const { createAccessToken } = require("../services/Token.service");
+const { createRoom } = require("../services/Room.service");
+const { createHome } = require("../services/Home.service");
 const moment = require("moment");
 
 //Tạo tài khoản
@@ -117,4 +122,117 @@ const signIn = async (req, res) => {
   }
 };
 
-module.exports = { signUp, signIn };
+// Thêm công tơ vào tài khoản
+const addEM = async (req, res) => {
+  try {
+    const { roomId, homeId, electricMeterId, roomname, homename } = req.body;
+    if (!roomId && !electricMeterId) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+
+    if (!electricMeterId) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Thiếu mã công tơ số"
+      );
+    }
+
+    const findedEM = await ElectricMeter.findOne({
+      where: { electricMeterId },
+    });
+    if (!findedEM) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Không tìm thấy công tơ"
+      );
+    }
+
+    if (!!findedEM.roomId) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Công tơ đã được kết nối với tài khoản khác"
+      );
+    }
+
+    const account = await Account.findOne({
+      where: { accountId: req.account.accountId },
+      include: [
+        {
+          model: Home,
+          nested: false,
+          attributes: { exclude: ["createdAt", "updatedAt"] },
+          include: [
+            {
+              model: Room,
+              attributes: { exclude: ["createdAt", "updatedAt"] },
+            },
+          ],
+        },
+      ],
+    });
+
+    if (roomId) {
+      const rooms = account.dataValues?.homes?.rooms.map((e) => e.roomId);
+      if (rooms && Array.isArray(rooms) && rooms.includes(roomId)) {
+        findedEM.roomId = roomId;
+        await findedEM.save();
+        return responseSuccess(res, ResponseStatus.SUCCESS, {
+          homes: account.dataValues.homes,
+        });
+      }
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Bạn không sở hữu phòng này"
+      );
+    }
+
+    if (homeId) {
+      const homes = account.dataValues?.homes.map((e) => e.homeId);
+      if ((!homes && !Array.isArray(homes)) || homes.includes(homeId)) {
+        return responseFailed(
+          res,
+          ResponseStatus.BAD_REQUEST,
+          "Bạn không sở hữu nhà này"
+        );
+      }
+      const homeById = await Home.findOne({
+        where: { homeId },
+        include: [{ model: Room }],
+      });
+      const room = await createRoom({
+        name: !!roomname
+          ? roomname
+          : `Phòng ${homeById.dataValues.rooms.length + 1}`,
+        homeId,
+      });
+
+      findedEM.roomId = room.roomId;
+      await findedEM.save();
+      return responseSuccess(res, ResponseStatus.SUCCESS, {
+        homes: account.dataValues.homes,
+      });
+    }
+
+    const home = await createHome({
+      accountId: req.account.accountId,
+      name: !!homename
+        ? homename
+        : `Nhà ${account.dataValues?.homes.length + 1}`,
+    });
+    const room = await createRoom({
+      name: !!roomname ? roomname : "Phòng 1",
+      homeId: home.homeId,
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      homes: account.dataValues.homes,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
+module.exports = { signUp, signIn, addEM };

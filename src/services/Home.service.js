@@ -1,4 +1,4 @@
-const Home = require("../models/Hoom");
+const Home = require("../models/Home");
 const createHome = async ({ accountId, name }) => {
   try {
     const home = await Home.create({ accountId, name });

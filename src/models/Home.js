@@ -1,8 +1,8 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const Room = require("./Room");
-class Hoom extends Model {}
-Hoom.init(
+class Home extends Model {}
+Home.init(
   {
     homeId: {
       type: DataTypes.INTEGER,
@@ -14,10 +14,10 @@ Hoom.init(
     },
   },
   {
-    modelName: "Hoom",
+    modelName: "Home",
     sequelize,
   }
 );
-Hoom.hasMany(Room, { foreignKey: { name: "hoomId" } });
+Home.hasMany(Room, { foreignKey: { name: "homeId" } });
 
-module.exports = Hoom;
+module.exports = Home;

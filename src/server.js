@@ -27,13 +27,16 @@ client.on("connect", () => {
 });
 
 client.on("message", (topic, payload) => {
-  console.log(
-    new Date(Date.now()).toLocaleString("vn"),
-    "Receive message",
-    topic,
-    JSON.parse(payload.toString())
-  );
-  insertNewscast(JSON.parse(payload.toString()));
+  if (JSON.parse(payload.toString())?.command === "SYS_BEAT") {
+    insertNewscast(JSON.parse(payload.toString()));
+  } else {
+    console.log(
+      new Date(Date.now()).toLocaleString("vn"),
+      "Receive message",
+      topic,
+      payload.toString()
+    );
+  }
 });
 
 app.get("/", (req, res) => {

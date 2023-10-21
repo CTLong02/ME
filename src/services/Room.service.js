@@ -1,7 +1,7 @@
 const Room = require("../models/Room");
-const createRoom = async ({ name, hoomId }) => {
+const createRoom = async ({ name, homeId }) => {
   try {
-    const room = await Room.create({ hoomId, name });
+    const room = await Room.create({ homeId, name });
     return room.dataValues;
   } catch (error) {
     return null;

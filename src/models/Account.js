@@ -1,7 +1,7 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const ElectricMeterShare = require("./ElectricMeterShare");
-const Home = require("./Hoom");
+const Home = require("./Home");
 const Token = require("./Token");
 const { ACCOUNT_LEVEL } = require("../config/constant/constant_model");
 class Account extends Model {}
