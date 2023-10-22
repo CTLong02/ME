@@ -19,7 +19,13 @@ Room.init(
     sequelize,
   }
 );
-Room.hasMany(ElectricMeterShare, { foreignKey: { name: "roomId" } });
-Room.hasMany(ElectricMeter, { foreignKey: { name: "roomId" } });
+Room.hasMany(ElectricMeterShare, {
+  as: "electricMeterShares",
+  foreignKey: { name: "roomId" },
+});
+Room.hasMany(ElectricMeter, {
+  as: "electricMeters",
+  foreignKey: { name: "roomId" },
+});
 
 module.exports = Room;

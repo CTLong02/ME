@@ -72,16 +72,23 @@ ElectricMeter.init(
 );
 
 ElectricMeter.hasMany(ElectricMeterShare, {
-  as: "electricMeterShare",
+  as: "electricMeterShares",
   foreignKey: { name: "electricMeterId" },
 });
 ElectricMeter.hasMany(Notification, {
-  as: "notification",
+  as: "notifications",
   foreignKey: { name: "electricMeterId" },
 });
-ElectricMeter.hasMany(Newscast, { foreignKey: { name: "electricMeterId" } });
-ElectricMeter.hasMany(Timer, { foreignKey: { name: "electricMeterId" } });
+ElectricMeter.hasMany(Newscast, {
+  as: "newcasts",
+  foreignKey: { name: "electricMeterId" },
+});
+ElectricMeter.hasMany(Timer, {
+  as: "timers",
+  foreignKey: { name: "electricMeterId" },
+});
 ElectricMeter.hasOne(ChangeTemperature, {
+  as: "changeTemperature",
   foreignKey: { name: "electricMeterId" },
 });
 module.exports = ElectricMeter;

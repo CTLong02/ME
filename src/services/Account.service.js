@@ -14,7 +14,7 @@ const createAccountByEmailService = async (email, pass) => {
     const passHash = hashPw(pass);
     const account = await Account.create({ email, pass: passHash });
     delete account.dataValues.pass;
-    return account;
+    return account.dataValues;
   } catch (error) {
     return null;
   }
@@ -50,6 +50,7 @@ const findAccountByPhoneNumberService = async (phoneNumber) => {
       attributes: { exclude: ["pass"] },
     });
     if (account) {
+      delete account.dataValues.pass;
       return account.dataValues;
     }
     return null;
@@ -76,27 +77,31 @@ const findAccountByEmailAndPass = async (email, pass) => {
 const joinWithEM = async (accountId) => {
   try {
     const account = await Account.findOne({
-      where: { accountId: accountId },
+      where: { accountId },
       include: [
         {
           model: Home,
-          attributes: { exclude: ["createdAt", "updatedAt"] },
+          attributes: { exclude: ["createdAt", "updatedAt", "accountId"] },
+          as: "homes",
           order: [["createdAt", "ASC"]],
           include: [
             {
               model: Room,
-              attributes: { exclude: ["createdAt", "updatedAt", "accountId"] },
+              attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
               order: [["createdAt", "ASC"]],
+              as: "rooms",
               include: [
                 {
                   model: ElectricMeter,
+                  as: "electricMeters",
                   order: [["createdAt", "ASC"]],
-                  attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
+                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
                 },
                 {
                   model: ElectricMeterShare,
+                  as: "electricMeterShares",
                   order: [["createdAt", "ASC"]],
-                  attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
+                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
                 },
               ],
             },

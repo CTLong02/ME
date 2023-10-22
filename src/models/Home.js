@@ -18,6 +18,6 @@ Home.init(
     sequelize,
   }
 );
-Home.hasMany(Room, { as: "room", foreignKey: { name: "homeId" } });
+Home.hasMany(Room, { as: "rooms", foreignKey: { name: "homeId" } });
 
 module.exports = Home;

@@ -15,6 +15,7 @@ Account.init(
     fullname: {
       type: DataTypes.STRING,
       allowNull: true,
+      defaultValue: null,
     },
     phoneNumber: {
       type: DataTypes.STRING,
@@ -50,7 +51,7 @@ Account.init(
   }
 );
 
-Account.hasMany(Home, { as: "home", foreignKey: { name: "accountId" } });
+Account.hasMany(Home, { as: "homes", foreignKey: { name: "accountId" } });
 Account.hasOne(Token, { as: "token", foreignKey: { name: "accountId" } });
 
 module.exports = Account;
