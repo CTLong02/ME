@@ -4,7 +4,12 @@ const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const { createRoom } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
-const { joinWithEM } = require("../services/Account.service");
+const { findEMById } = require("../services/ElectricMeter.service");
+const {
+  joinWithEM,
+  findAccountByEmailService,
+  findAccountByPhoneNumberService,
+} = require("../services/Account.service");
 const {
   responseFailed,
   responseSuccess,
@@ -14,7 +19,14 @@ const ResponseStatus = require("../config/constant/response_status");
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
   try {
-    const { roomId, homeId, electricMeterId, roomname, homename } = req.body;
+    const {
+      electricMeterName,
+      roomId,
+      homeId,
+      electricMeterId,
+      roomname,
+      homename,
+    } = req.body;
     if (!roomId && !electricMeterId) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
@@ -68,6 +80,7 @@ const addEM = async (req, res) => {
       const rooms = account.dataValues?.homes?.rooms.map((e) => e.roomId);
       if (rooms && Array.isArray(rooms) && rooms.includes(roomId)) {
         findedEM.roomId = roomId;
+        findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
         await findedEM.save();
         const newAccount = await joinWithEM(req.account.accountId);
         return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -102,6 +115,7 @@ const addEM = async (req, res) => {
       });
 
       findedEM.roomId = room.roomId;
+      findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
       await findedEM.save();
       const newAccount = joinWithEM(req.account.accountId);
       return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -120,6 +134,7 @@ const addEM = async (req, res) => {
       homeId: home.homeId,
     });
     findedEM.roomId = room.roomId;
+    findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
     await findedEM.save();
     const newAccount = await joinWithEM(req.account.accountId);
     return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -130,4 +145,10 @@ const addEM = async (req, res) => {
   }
 };
 
-module.exports = { addEM };
+// Chia sẻ công tơ
+const shareEm = async (req, res) => {
+  try {
+  } catch (error) {}
+};
+
+module.exports = { addEM, shareEm };
