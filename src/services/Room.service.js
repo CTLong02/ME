@@ -17,4 +17,17 @@ const findRoomByRoomId = async (roomId) => {
   }
 };
 
-module.exports = { createRoom, findRoomByRoomId };
+const deleteRoom = async (roomId) => {
+  try {
+    const findedRoom = await findRoomByRoomId(roomId);
+    if (findedRoom) {
+      await Home.destroy({ where: { roomId } });
+      return findedRoom;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+module.exports = { createRoom, findRoomByRoomId, deleteRoom };

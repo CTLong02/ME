@@ -48,13 +48,13 @@ const findEMById = async (electricMeterId) => {
   }
 };
 
-const findAccountById = async (electricMeterId) => {
+const findAccountByEMId = async (electricMeterId) => {
   try {
     const account = await ElectricMeter.findOne({
       where: { electricMeterId },
       attributes: [
         "electricMeterId",
-        [Sequelize.col("room.home.accountId"), "accountId"],
+        [Sequelize.col("room.home.account.accountId"), "accountId"],
         [Sequelize.col("room.name"), "roomname"],
         [Sequelize.col("room.home.name"), "homename"],
       ],
@@ -69,6 +69,7 @@ const findAccountById = async (electricMeterId) => {
               model: Home,
               as: "home",
               required: true,
+              include: [{ model: Account, as: "account" }],
             },
           ],
         },
@@ -80,4 +81,4 @@ const findAccountById = async (electricMeterId) => {
   }
 };
 
-module.exports = { addEM, findEMById, findAccountById };
+module.exports = { addEM, findEMById, findAccountByEMId };

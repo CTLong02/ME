@@ -2,12 +2,26 @@ const express = require("express");
 const ElectricMeterRouter = express.Router();
 const authMiddleware = require("../middlewares/authMiddleware");
 const { exitsAccountMiddleware } = require("../middlewares/accountMiddleware");
-const { ownEMMiddleware } = require("../middlewares/emMiddleware");
-const { addEM, shareEm } = require("../controllers/ElectricMeter.controller");
-ElectricMeterRouter.post("/add-em", authMiddleware, addEM);
+const {
+  permisionEmMiddleware,
+  exitsEMMiddleware,
+} = require("../middlewares/emMiddleware");
+const {
+  addEM,
+  shareEm,
+  acceptEmShare,
+} = require("../controllers/ElectricMeter.controller");
+const { URL_EM } = require("../config/constant/urls");
+ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
 ElectricMeterRouter.post(
-  "/share-em",
-  [authMiddleware, exitsAccountMiddleware, ownEMMiddleware],
+  URL_EM.shareEm,
+  [authMiddleware, exitsAccountMiddleware, permisionEmMiddleware],
   shareEm
+);
+
+ElectricMeterRouter.post(
+  URL_EM.acceptedEm,
+  [authMiddleware, exitsEMMiddleware],
+  acceptEmShare
 );
 module.exports = ElectricMeterRouter;

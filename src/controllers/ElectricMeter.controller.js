@@ -9,9 +9,14 @@ const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
+const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
+const { ROLE_EM } = require("../config/constant/constant_model");
 const {
   createEMShareForAnAccount,
+  findShareAccountsByEMId,
+  findShareAccountByEMId,
+  deleteEMShare,
 } = require("../services/ElectricMeterShare.service");
 
 // Thêm công tơ vào tài khoản
@@ -150,18 +155,64 @@ const addEM = async (req, res) => {
 // Chia sẻ công tơ
 const shareEm = async (req, res) => {
   try {
+    const { roleShare } = req.body;
+    if (!roleShare || !Object.values(ROLE_EM).includes(roleShare)) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Sai tham số quyền truy cập"
+      );
+    }
+
     const recipientAccount = req.recipientAccount;
     const em = req.em;
-    const emShare = createEMShareForAnAccount({
+
+    const shareAccount = await findShareAccountByEMId(
+      em.electricMeterId,
+      recipientAccount.accountId
+    );
+    if (shareAccount) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Yều cầu đã tồn tại"
+      );
+    }
+
+    const emShare = await createEMShareForAnAccount({
       accountId: recipientAccount.accountId,
       electricMeterId: em.electricMeterId,
       homename: em.homename,
       roomname: em.roomname,
+      roleShare,
     });
     if (!emShare) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
     }
+    const sharedAccounts = await findShareAccountsByEMId(em.electricMeterId);
+
+    // Sau thời gian TIME_SHARE_REQUEST mà sự chia sẻ chưa được chấp nhận thì xóa
+    setTimeout(async () => {
+      const shareAccount = await findShareAccountByEMId(
+        em.electricMeterId,
+        recipientAccount.accountId
+      );
+      if (!!shareAccount && shareAccount.accepted === 0) {
+        deleteEMShare(em.electricMeterId, recipientAccount.accountId);
+      }
+    }, TIME.TIME_SHARE_REQUEST);
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      sharedAccounts,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
+//Chấp nhận chia sẻ
+const acceptEmShare = async (req, res) => {
+  try {
   } catch (error) {}
 };
 
-module.exports = { addEM, shareEm };
+module.exports = { addEM, shareEm, acceptEmShare };

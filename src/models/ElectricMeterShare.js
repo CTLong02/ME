@@ -15,6 +15,14 @@ ElectricMeterShare.init(
       values: [...Object.values(ROLE_EM)],
       defaultValue: ROLE_EM.read_only,
     },
+    accepted: {
+      type: DataTypes.TINYINT,
+      defaultValue: 0,
+    },
+    acceptedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     modelName: "ElectricMeterShare",

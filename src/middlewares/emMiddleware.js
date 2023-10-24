@@ -1,10 +1,32 @@
 const { responseFailed } = require("../utils/helper/RESTHelper");
 const ResponseStatus = require("../config/constant/response_status");
-const { joinAccount } = require("../services/Account.service");
+const {
+  API_WITH_EM_ROLE,
+  EM_ROLES,
+} = require("../config/constant/contants_app");
 const {
   findEMById,
-  findAccountById,
+  findAccountByEMId,
 } = require("../services/ElectricMeter.service");
+const {
+  findAccountByEMShareId,
+} = require("../services/ElectricMeterShare.service");
+
+const exitsEMMiddleware = async (req, res, next) => {
+  try {
+    const { electricMeterId } = req.body;
+    if (!electricMeterId) {
+      responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const findedEM = await findEMById(electricMeterId);
+    if (!findedEM) {
+      responseFailed(res, ResponseStatus.NOT_FOUND, "Không tìm thấy thiết bị");
+    }
+    req.em = findedEM;
+    next();
+  } catch (error) {}
+};
+
 const ownEMMiddleware = async (req, res, next) => {
   try {
     const { electricMeterId } = req.body;
@@ -24,7 +46,7 @@ const ownEMMiddleware = async (req, res, next) => {
         "Không tìm thấy thiết bị"
       );
     }
-    const findAccountByEMId = await findAccountById(electricMeterId);
+    const findAccountByEMId = await findAccountByEMId(electricMeterId);
     if (!findAccountByEMId || accountId !== findAccountByEMId.accountId) {
       return responseFailed(
         res,
@@ -42,6 +64,7 @@ const ownEMMiddleware = async (req, res, next) => {
 
 const permisionEmMiddleware = async (req, res, next) => {
   try {
+    let myEmRole;
     const { electricMeterId } = req.body;
     if (!electricMeterId) {
       return responseFailed(
@@ -59,15 +82,28 @@ const permisionEmMiddleware = async (req, res, next) => {
         "Không tìm thấy thiết bị"
       );
     }
-    const findAccountByEMId = await findAccountById(electricMeterId);
-    if (!findAccountByEMId || accountId !== findAccountByEMId.accountId) {
-      return responseFailed(
-        res,
-        ResponseStatus.FORBIDDEN,
-        "Bạn không được cho phép"
-      );
+    const url = req.url;
+    const permisionRoles = API_WITH_EM_ROLE[url];
+    const findedAccountByEMId = await findAccountByEMId(electricMeterId);
+    if (findedAccountByEMId && accountId === findedAccountByEMId.accountId) {
+      myEmRole = EM_ROLES.owner;
     }
-    const { room, ...em } = findAccountByEMId;
+
+    if (!myEmRole) {
+      const findedAccountByEMShareId = await findAccountByEMShareId(
+        electricMeterId,
+        req.account.accountId
+      );
+      if (findedAccountByEMShareId) {
+        myEmRole = findedAccountByEMShareId.roleShare;
+      }
+    }
+
+    if (!permisionRoles.includes(myEmRole)) {
+      return responseFailed(res, ResponseStatus.FORBIDDEN, "Không có quyền");
+    }
+
+    const { room, ...em } = findedAccountByEMId;
     req.em = em;
     next();
   } catch (error) {
@@ -75,4 +111,4 @@ const permisionEmMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = { ownEMMiddleware, permisionEmMiddleware };
+module.exports = { ownEMMiddleware, permisionEmMiddleware, exitsEMMiddleware };
