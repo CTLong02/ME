@@ -52,6 +52,6 @@ Account.init(
 );
 
 Account.hasMany(Home, { as: "homes", foreignKey: { name: "accountId" } });
+Home.belongsTo(Account, { as: "account", foreignKey: { name: "accountId" } });
 Account.hasOne(Token, { as: "token", foreignKey: { name: "accountId" } });
-
 module.exports = Account;

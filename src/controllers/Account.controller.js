@@ -4,7 +4,7 @@ const {
   findAccountByEmailService,
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
-  joinWithEM,
+  joinAccount,
 } = require("../services/Account.service");
 const {
   responseFailed,
@@ -100,7 +100,7 @@ const signIn = async (req, res) => {
       if (!findedAccountByEmailAndPass) {
         return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai mật khẩu");
       }
-      const join = await joinWithEM(findedAccountByEmailAndPass.accountId);
+      const join = await joinAccount(findedAccountByEmailAndPass.accountId);
       const accessToken = createToken(findedAccountByEmailAndPass);
       const token = await createAccessToken({
         accountId: findedAccountByEmailAndPass.accountId,

@@ -75,18 +75,38 @@ ElectricMeter.hasMany(ElectricMeterShare, {
   as: "electricMeterShares",
   foreignKey: { name: "electricMeterId" },
 });
+ElectricMeterShare.belongsTo(ElectricMeter, {
+  as: "electricMeter",
+  foreignKey: { name: "electricMeterId" },
+});
+
 ElectricMeter.hasMany(Notification, {
   as: "notifications",
   foreignKey: { name: "electricMeterId" },
 });
+Notification.belongsTo(ElectricMeter, {
+  as: "electricMeter",
+  foreignKey: { name: "electricMeterId" },
+});
+
 ElectricMeter.hasMany(Newscast, {
   as: "newcasts",
   foreignKey: { name: "electricMeterId" },
 });
+Newscast.belongsTo(ElectricMeter, {
+  as: "electricMeter",
+  foreignKey: { name: "electricMeterId" },
+});
+
 ElectricMeter.hasMany(Timer, {
   as: "timers",
   foreignKey: { name: "electricMeterId" },
 });
+Timer.belongsTo(ElectricMeter, {
+  as: "electricMeter",
+  foreignKey: { name: "electricMeterId" },
+});
+
 ElectricMeter.hasOne(ChangeTemperature, {
   as: "changeTemperature",
   foreignKey: { name: "electricMeterId" },

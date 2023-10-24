@@ -4,17 +4,15 @@ const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const { createRoom } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
-const { findEMById } = require("../services/ElectricMeter.service");
-const {
-  joinWithEM,
-  findAccountByEmailService,
-  findAccountByPhoneNumberService,
-} = require("../services/Account.service");
+const { joinAccount } = require("../services/Account.service");
 const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
 const ResponseStatus = require("../config/constant/response_status");
+const {
+  createEMShareForAnAccount,
+} = require("../services/ElectricMeterShare.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -82,7 +80,7 @@ const addEM = async (req, res) => {
         findedEM.roomId = roomId;
         findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
         await findedEM.save();
-        const newAccount = await joinWithEM(req.account.accountId);
+        const newAccount = await joinAccount(req.account.accountId);
         return responseSuccess(res, ResponseStatus.SUCCESS, {
           homes: newAccount.homes,
         });
@@ -96,7 +94,11 @@ const addEM = async (req, res) => {
 
     if (homeId) {
       const homes = account.dataValues?.homes.map((e) => e.homeId);
-      if ((!homes && !Array.isArray(homes)) || homes.includes(homeId)) {
+      if (
+        !homes ||
+        !Array.isArray(homes) ||
+        !homes.includes(Number.parseInt(homeId))
+      ) {
         return responseFailed(
           res,
           ResponseStatus.BAD_REQUEST,
@@ -105,7 +107,7 @@ const addEM = async (req, res) => {
       }
       const homeById = await Home.findOne({
         where: { homeId },
-        include: [{ model: Room }],
+        include: [{ model: Room, as: "rooms" }],
       });
       const room = await createRoom({
         name: !!roomname
@@ -117,7 +119,7 @@ const addEM = async (req, res) => {
       findedEM.roomId = room.roomId;
       findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
       await findedEM.save();
-      const newAccount = joinWithEM(req.account.accountId);
+      const newAccount = await joinAccount(req.account.accountId);
       return responseSuccess(res, ResponseStatus.SUCCESS, {
         homes: newAccount.homes,
       });
@@ -136,7 +138,7 @@ const addEM = async (req, res) => {
     findedEM.roomId = room.roomId;
     findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
     await findedEM.save();
-    const newAccount = await joinWithEM(req.account.accountId);
+    const newAccount = await joinAccount(req.account.accountId);
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       homes: newAccount.homes,
     });
@@ -148,6 +150,17 @@ const addEM = async (req, res) => {
 // Chia sẻ công tơ
 const shareEm = async (req, res) => {
   try {
+    const recipientAccount = req.recipientAccount;
+    const em = req.em;
+    const emShare = createEMShareForAnAccount({
+      accountId: recipientAccount.accountId,
+      electricMeterId: em.electricMeterId,
+      homename: em.homename,
+      roomname: em.roomname,
+    });
+    if (!emShare) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    }
   } catch (error) {}
 };
 

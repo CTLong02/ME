@@ -19,5 +19,6 @@ Home.init(
   }
 );
 Home.hasMany(Room, { as: "rooms", foreignKey: { name: "homeId" } });
+Room.belongsTo(Home, { as: "home", foreignKey: { name: "homeId" } });
 
 module.exports = Home;

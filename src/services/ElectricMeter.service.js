@@ -2,6 +2,10 @@ const { createHome } = require("./Home.service");
 const { createRoom } = require("./Room.service");
 const { ROLE_EM } = require("../config/constant/constant_model");
 const ElectricMeter = require("../models/ElectricMeter");
+const Room = require("../models/Room");
+const Home = require("../models/Home");
+const Account = require("../models/Account");
+const { Sequelize } = require("sequelize");
 const addEM = async ({
   ID,
   Ver,
@@ -44,4 +48,36 @@ const findEMById = async (electricMeterId) => {
   }
 };
 
-module.exports = { addEM, findEMById };
+const findAccountById = async (electricMeterId) => {
+  try {
+    const account = await ElectricMeter.findOne({
+      where: { electricMeterId },
+      attributes: [
+        "electricMeterId",
+        [Sequelize.col("room.home.accountId"), "accountId"],
+        [Sequelize.col("room.name"), "roomname"],
+        [Sequelize.col("room.home.name"), "homename"],
+      ],
+      include: [
+        {
+          model: Room,
+          as: "room",
+          right: true,
+          required: true,
+          include: [
+            {
+              model: Home,
+              as: "home",
+              required: true,
+            },
+          ],
+        },
+      ],
+    });
+    return !!account ? account.dataValues : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+module.exports = { addEM, findEMById, findAccountById };

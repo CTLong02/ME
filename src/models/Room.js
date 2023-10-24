@@ -23,8 +23,17 @@ Room.hasMany(ElectricMeterShare, {
   as: "electricMeterShares",
   foreignKey: { name: "roomId" },
 });
+ElectricMeterShare.belongsTo(Room, {
+  as: "room",
+  foreignKey: { name: "roomId" },
+});
+
 Room.hasMany(ElectricMeter, {
   as: "electricMeters",
+  foreignKey: { name: "roomId" },
+});
+ElectricMeter.belongsTo(Room, {
+  as: "room",
   foreignKey: { name: "roomId" },
 });
 

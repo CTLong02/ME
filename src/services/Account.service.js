@@ -74,10 +74,11 @@ const findAccountByEmailAndPass = async (email, pass) => {
   }
 };
 
-const joinWithEM = async (accountId) => {
+const joinAccount = async (accountId) => {
   try {
     const account = await Account.findOne({
       where: { accountId },
+      attributes: { exclude: ["createdAt", "updatedAt", "pass"] },
       include: [
         {
           model: Home,
@@ -120,5 +121,5 @@ module.exports = {
   findAccountByEmailService,
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
-  joinWithEM,
+  joinAccount,
 };

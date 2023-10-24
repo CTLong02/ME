@@ -35,7 +35,16 @@ const exitsAccountMiddleware = async (req, res, next) => {
     );
   }
 
-  req.recipientAccount = !!accountByEmail ? accountByEmail : accountByPhone;
+  const recipientAccount = !!accountByEmail ? accountByEmail : accountByPhone;
+  if (recipientAccount.accountId === req.account.accountId) {
+    return responseFailed(
+      res,
+      ResposeStatus.BAD_REQUEST,
+      `Không thể thực hiện với tài khoản này`
+    );
+  }
+
+  req.recipientAccount = recipientAccount;
   next();
 };
 
