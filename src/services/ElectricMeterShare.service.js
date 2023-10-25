@@ -1,11 +1,11 @@
 const ElectricMeterShare = require("../models/ElectricMeterShare");
-const { createRoom } = require("../services/Room.service");
-const { createHome } = require("../services/Home.service");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
 const Account = require("../models/Account");
 const { Sequelize } = require("sequelize");
-// const {} = require("../services/ElectricMeter.service")
+const { createRoom } = require("../services/Room.service");
+const { createHome } = require("../services/Home.service");
+const { ROLE_EM } = require("../config/constant/constant_model");
 const createEMShareForAnAccount = async ({
   accountId,
   electricMeterId,
@@ -104,6 +104,8 @@ const findShareAccountByEMId = async (electricMeterId, accountId) => {
       attributes: [
         "electricMeterShareId",
         "accepted",
+        "roomId",
+        "roleShare",
         [Sequelize.col("room.home.account.accountId"), "accountId"],
         [Sequelize.col("room.home.account.email"), "email"],
         [Sequelize.col("room.home.account.phonenumber"), "phonenumber"],
@@ -133,8 +135,44 @@ const findShareAccountByEMId = async (electricMeterId, accountId) => {
 
 const deleteEMShare = async (electricMeterId, accountId) => {
   try {
-    await ElectricMeterShare.destroy({
+    const emShare = await findShareAccountByEMId(electricMeterId, accountId);
+    if (!!emShare) {
+      await ElectricMeterShare.destroy({
+        where: { electricMeterId },
+        include: [
+          {
+            model: Room,
+            as: "room",
+            include: [
+              {
+                model: Home,
+                as: "home",
+                include: [
+                  { model: Account, as: "account", where: { accountId } },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      return emShare;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const updateEMShare = async ({
+  electricMeterId,
+  accountId,
+  roleShare,
+  accepted,
+}) => {
+  try {
+    const emShare = await ElectricMeterShare.findOne({
       where: { electricMeterId },
+      attributes: ["accepted", "roleShare", "electricMeterShareId"],
       include: [
         {
           model: Room,
@@ -151,7 +189,24 @@ const deleteEMShare = async (electricMeterId, accountId) => {
         },
       ],
     });
-  } catch (error) {}
+    if (emShare) {
+      emShare.roleShare =
+        !!roleShare && Object.values(ROLE_EM).includes(roleShare)
+          ? roleShare
+          : emShare.roleShare;
+      emShare.accepted =
+        !!accepted && (accepted === 0 || accepted === 1)
+          ? accepted
+          : emShare.accepted;
+      emShare.acceptedAt =
+        accepted === 1 ? new Date(Date.now()) : emShare.acceptedAt;
+      await emShare.save();
+      return emShare;
+    }
+    return null;
+  } catch (error) {
+    return null;
+  }
 };
 
 module.exports = {
@@ -160,4 +215,5 @@ module.exports = {
   findShareAccountsByEMId,
   findShareAccountByEMId,
   deleteEMShare,
+  updateEMShare,
 };

@@ -1,7 +1,8 @@
 module.exports.URL_EM = {
   addEm: "/add",
   shareEm: "/share",
-  acceptedEm: "/accept",
+  acceptEm: "/accept",
+  rejectdEm: "/reject",
 };
 
 module.exports.URL_ACCOUNT = {

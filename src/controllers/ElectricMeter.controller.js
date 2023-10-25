@@ -2,8 +2,8 @@ const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
-const { createRoom } = require("../services/Room.service");
-const { createHome } = require("../services/Home.service");
+const { createRoom, deleteRoom } = require("../services/Room.service");
+const { createHome, deleteHome } = require("../services/Home.service");
 const { joinAccount } = require("../services/Account.service");
 const {
   responseFailed,
@@ -17,6 +17,8 @@ const {
   findShareAccountsByEMId,
   findShareAccountByEMId,
   deleteEMShare,
+  updateEMShare,
+  e,
 } = require("../services/ElectricMeterShare.service");
 
 // Thêm công tơ vào tài khoản
@@ -191,14 +193,23 @@ const shareEm = async (req, res) => {
     }
     const sharedAccounts = await findShareAccountsByEMId(em.electricMeterId);
 
-    // Sau thời gian TIME_SHARE_REQUEST mà sự chia sẻ chưa được chấp nhận thì xóa
+    // Sau thời gian TIME_SHARE_REQUEST mà người được chia sẻ không chấp nhận thì xóa yêu cầu
     setTimeout(async () => {
       const shareAccount = await findShareAccountByEMId(
         em.electricMeterId,
         recipientAccount.accountId
       );
       if (!!shareAccount && shareAccount.accepted === 0) {
-        deleteEMShare(em.electricMeterId, recipientAccount.accountId);
+        const emShare = await deleteEMShare(
+          em.electricMeterId,
+          recipientAccount.accountId
+        );
+        if (emShare) {
+          const room = await deleteRoom(emShare.roomId);
+          if (room) {
+            await deleteHome(room.homeId);
+          }
+        }
       }
     }, TIME.TIME_SHARE_REQUEST);
     return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -212,7 +223,31 @@ const shareEm = async (req, res) => {
 //Chấp nhận chia sẻ
 const acceptEmShare = async (req, res) => {
   try {
-  } catch (error) {}
+    const em = req.em;
+    const account = req.account;
+    const accountShare = await findShareAccountByEMId(
+      em.electricMeterId,
+      account.accountId
+    );
+    if (!accountShare) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Bạn không được yêu cầu hoặc yêu cầu đã hết hạn"
+      );
+    }
+    const newEMShare = await updateEMShare({
+      electricMeterId: em.electricMeterId,
+      accountId: account.accountId,
+      accepted: 1,
+    });
+    if (!newEMShare) {
+      return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Có lỗi xảy ra");
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS);
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
 };
 
 module.exports = { addEM, shareEm, acceptEmShare };

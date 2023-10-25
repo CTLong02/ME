@@ -1,4 +1,4 @@
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
 const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
@@ -96,11 +96,13 @@ const joinAccount = async (accountId) => {
                   model: ElectricMeter,
                   as: "electricMeters",
                   order: [["createdAt", "ASC"]],
+                  required: false,
                   attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
                 },
                 {
                   model: ElectricMeterShare,
-                  // where: { accepted: 1 },
+                  where: { accepted: 1 },
+                  required: false,
                   as: "electricMeterShares",
                   order: [["createdAt", "ASC"]],
                   attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },

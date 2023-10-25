@@ -21,7 +21,7 @@ const deleteRoom = async (roomId) => {
   try {
     const findedRoom = await findRoomByRoomId(roomId);
     if (findedRoom) {
-      await Home.destroy({ where: { roomId } });
+      await Room.destroy({ where: { roomId } });
       return findedRoom;
     }
     return null;

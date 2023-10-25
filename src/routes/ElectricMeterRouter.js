@@ -20,8 +20,11 @@ ElectricMeterRouter.post(
 );
 
 ElectricMeterRouter.post(
-  URL_EM.acceptedEm,
+  URL_EM.acceptEm,
   [authMiddleware, exitsEMMiddleware],
   acceptEmShare
 );
+
+ElectricMeterRouter.post(URL_EM.rejectdEm, [authMiddleware, exitsEMMiddleware]);
+
 module.exports = ElectricMeterRouter;
