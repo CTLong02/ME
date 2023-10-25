@@ -99,7 +99,7 @@ const findShareAccountsByEMId = async (electricMeterId) => {
 
 const findShareAccountByEMId = async (electricMeterId, accountId) => {
   try {
-    const account = await ElectricMeterShare.findOne({
+    const account = await ElectricMeterShare.findAll({
       where: { electricMeterId },
       attributes: [
         "electricMeterShareId",
@@ -114,20 +114,31 @@ const findShareAccountByEMId = async (electricMeterId, accountId) => {
         {
           model: Room,
           as: "room",
+          required: true,
           include: [
             {
               model: Home,
               as: "home",
+              required: true,
               include: [
-                { model: Account, as: "account", where: { accountId } },
+                {
+                  model: Account,
+                  as: "account",
+                  where: { accountId },
+                  required: true,
+                },
               ],
             },
           ],
         },
       ],
     });
-    const { room, ...shareAccount } = account.dataValues;
-    return !!account ? shareAccount : null;
+    const newAccount = account ? account[0] : null;
+    if (newAccount) {
+      const { room, ...shareAccount } = newAccount.dataValues;
+      return shareAccount;
+    }
+    return null;
   } catch (error) {
     return null;
   }
@@ -170,25 +181,36 @@ const updateEMShare = async ({
   accepted,
 }) => {
   try {
-    const emShare = await ElectricMeterShare.findOne({
+    const emShares = await ElectricMeterShare.findAll({
       where: { electricMeterId },
       attributes: ["accepted", "roleShare", "electricMeterShareId"],
       include: [
         {
           model: Room,
           as: "room",
+          required: true,
           include: [
             {
               model: Home,
               as: "home",
+              required: true,
               include: [
-                { model: Account, as: "account", where: { accountId } },
+                {
+                  model: Account,
+                  as: "account",
+                  where: { accountId },
+                  required: true,
+                },
               ],
             },
           ],
         },
       ],
     });
+    if (!emShares) {
+      return null;
+    }
+    const emShare = emShares[0];
     if (emShare) {
       emShare.roleShare =
         !!roleShare && Object.values(ROLE_EM).includes(roleShare)

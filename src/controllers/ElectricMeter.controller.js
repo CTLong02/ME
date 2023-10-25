@@ -173,7 +173,7 @@ const shareEm = async (req, res) => {
       em.electricMeterId,
       recipientAccount.accountId
     );
-    if (shareAccount) {
+    if (shareAccount?.room?.home?.account) {
       return responseFailed(
         res,
         ResponseStatus.BAD_REQUEST,
@@ -249,5 +249,33 @@ const acceptEmShare = async (req, res) => {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
+//Từ chối chia sẻ
+const rejectEMShare = async (req, res) => {
+  try {
+    const em = req.em;
+    const account = req.account;
+    const accountShare = await findShareAccountByEMId(
+      em.electricMeterId,
+      account.accountId
+    );
+    if (!accountShare) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Bạn không được yêu cầu hoặc yêu cầu đã hết hạn"
+      );
+    }
+    const newEMShare = await deleteEMShare({
+      electricMeterId: em.electricMeterId,
+      accountId: account.accountId,
+    });
+    if (!newEMShare) {
+      return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Có lỗi xảy ra");
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS);
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
 
-module.exports = { addEM, shareEm, acceptEmShare };
+module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare };
