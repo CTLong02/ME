@@ -2,6 +2,7 @@ const { createHome } = require("./Home.service");
 const { createRoom } = require("./Room.service");
 const { ROLE_EM } = require("../config/constant/constant_model");
 const ElectricMeter = require("../models/ElectricMeter");
+const ElectricMeterShare = require("../models/ElectricMeterShare");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
 const Account = require("../models/Account");
@@ -81,4 +82,60 @@ const findAccountByEMId = async (electricMeterId) => {
   }
 };
 
-module.exports = { addEM, findEMById, findAccountByEMId };
+const findEMsByAcountId = async (accountId) => {
+  try {
+    const account = await Account.findOne({
+      where: { accountId },
+      attributes: { exclude: ["createdAt", "updatedAt", "pass"] },
+      include: [
+        {
+          model: Home,
+          attributes: { exclude: ["createdAt", "updatedAt", "accountId"] },
+          as: "homes",
+          order: [["createdAt", "ASC"]],
+          include: [
+            {
+              model: Room,
+              attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
+              order: [["createdAt", "ASC"]],
+              as: "rooms",
+              required: true,
+              include: [
+                {
+                  model: ElectricMeter,
+                  as: "electricMeters",
+                  order: [["createdAt", "ASC"]],
+                  required: false,
+                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
+                },
+                {
+                  model: ElectricMeterShare,
+                  where: {
+                    accepted: 1,
+                  },
+                  required: false,
+                  as: "electricMeterShares",
+                  order: [["createdAt", "ASC"]],
+                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
+                  include: [
+                    {
+                      model: ElectricMeter,
+                      as: "electricMeter",
+                      attributes: {
+                        exclude: ["createdAt", "updatedAt", "roomId"],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    // const electricMeters
+  } catch (error) {
+    return null;
+  }
+};
+module.exports = { addEM, findEMById, findAccountByEMId, findEMsByAcountId };

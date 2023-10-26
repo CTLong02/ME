@@ -82,7 +82,11 @@ const addEM = async (req, res) => {
     });
 
     if (roomId) {
-      const rooms = account.dataValues?.homes?.rooms.map((e) => e.roomId);
+      const rooms = account.dataValues?.homes.reduce((home, curValue) => {
+        const { rooms } = home;
+        const roomIds = rooms.map((room) => room.roomId);
+        return [...curValue, ...roomIds];
+      }, []);
       if (rooms && Array.isArray(rooms) && rooms.includes(roomId)) {
         findedEM.roomId = roomId;
         findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
