@@ -21,7 +21,6 @@ const {
   findSharedEmsByAccountId,
 } = require("../services/ElectricMeterShare.service");
 const { findEMsByAcountId } = require("../services/ElectricMeter.service");
-const { lang } = require("moment");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -285,12 +284,22 @@ const rejectEMShare = async (req, res) => {
   }
 };
 
-// Lấy tất cả các thiết bị (cả sở hữu và được chia sẻ)
-const allEms = async (req, res) => {
+// Lấy các thiết bị (cả sở hữu và được chia sẻ)
+const getEms = async (req, res) => {
   try {
-    const account = req.account;
-    const ownEMs = await findEMsByAcountId(account.accountId);
-    const sharedEms = await findSharedEmsByAccountId(account.accountId);
+    const { accountId } = req.account;
+    const roomId = req.query?.roomId
+      ? Number.parseInt(req.query?.roomId)
+      : null;
+    const homeId = req.query?.homeId
+      ? Number.parseInt(req.query?.homeId)
+      : null;
+    const ownEMs = await findEMsByAcountId({ roomId, homeId, accountId });
+    const sharedEms = await findSharedEmsByAccountId({
+      roomId,
+      homeId,
+      accountId,
+    });
     const ems = [];
     const lOwnEms = ownEMs.length;
     const lSharedEms = sharedEms.length;
@@ -298,8 +307,8 @@ const allEms = async (req, res) => {
     let j = 0;
     while (i < lOwnEms || j < lSharedEms) {
       if (i < lOwnEms && j < lSharedEms) {
-        const { acceptedAt, shareEm } = sharedEms[j];
-        if (ownEMs[i]["createdAt"] < acceptedAt) {
+        const { acceptedAt, ...shareEm } = sharedEms[j];
+        if (ownEMs[i].createdAt < acceptedAt) {
           ems.push(ownEMs[i]);
           i++;
         } else {
@@ -310,7 +319,7 @@ const allEms = async (req, res) => {
         ems.push(ownEMs[i]);
         i++;
       } else {
-        const { shareEm } = sharedEms[j];
+        const { acceptedAt, ...shareEm } = sharedEms[j];
         ems.push(shareEm);
         j++;
       }
@@ -318,14 +327,14 @@ const allEms = async (req, res) => {
     responseSuccess(res, ResponseStatus.SUCCESS, {
       electricMeters: [
         ...ems.map((em) => {
-          const { room, ...value } = em.dataValues;
+          const { room, ...value } = em;
           return value;
         }),
       ],
     });
   } catch (error) {
-    responseSuccess(res, ResponseStatus.SUCCESS, { electricMeters: [] });
+    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
-module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare, allEms };
+module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare, getEms };

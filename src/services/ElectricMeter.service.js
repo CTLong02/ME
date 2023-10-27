@@ -82,19 +82,29 @@ const findAccountByEMId = async (electricMeterId) => {
   }
 };
 
-const findEMsByAcountId = async (accountId) => {
+const findEMsByAcountId = async ({ roomId, homeId, accountId }) => {
   try {
     const ownEMs = await ElectricMeter.findAll({
       order: [["createdAt", "ASC"]],
-      attributes: { exclude: ["updatedAt"] },
+      attributes: [
+        "electricMeterId",
+        "name",
+        [Sequelize.literal("'owner'"), "role"],
+        [Sequelize.col("room.roomId"), "roomId"],
+        [Sequelize.col("room.name"), "roomname"],
+        [Sequelize.col("room.home.homeId"), "homeId"],
+        [Sequelize.col("room.home.name"), "homename"],
+      ],
       include: {
         model: Room,
         as: "room",
         required: true,
+        where: roomId ? { roomId } : {},
         include: {
           model: Home,
           as: "home",
           required: true,
+          where: homeId ? { homeId } : {},
           include: {
             as: "account",
             model: Account,
@@ -104,7 +114,11 @@ const findEMsByAcountId = async (accountId) => {
         },
       },
     });
-    return ownEMs ? ownEMs : [];
+    return ownEMs
+      ? ownEMs.map((ownEM) => {
+          return { ...ownEM.dataValues };
+        })
+      : [];
   } catch (error) {
     return [];
   }

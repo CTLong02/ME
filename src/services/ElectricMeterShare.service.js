@@ -232,25 +232,37 @@ const updateEMShare = async ({
   }
 };
 
-const findSharedEmsByAccountId = async (accountId) => {
+const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
   try {
     const sharedEms = await ElectricMeterShare.findAll({
       where: { accepted: 1 },
       order: [["acceptedAt", "ASC"]],
+      attributes: [
+        "electricMeterId",
+        "acceptedAt",
+        ["roleShare", "role"],
+        [Sequelize.col("electricMeter.name"), "name"],
+        [Sequelize.col("room.roomId"), "roomId"],
+        [Sequelize.col("room.name"), "roomname"],
+        [Sequelize.col("room.home.homeId"), "homeId"],
+        [Sequelize.col("room.home.name"), "homename"],
+      ],
       include: [
         {
           model: ElectricMeter,
           as: "electricMeter",
           required: true,
-          attributes: { exclude: ["updatedAt"] },
+          attributes: { exclude: ["updatedAt", "roomId"] },
         },
         {
           model: Room,
           as: "room",
           required: true,
+          where: roomId ? { roomId } : {},
           include: {
             model: Home,
             as: "home",
+            where: homeId ? { homeId } : {},
             required: true,
             include: {
               model: Account,
@@ -263,10 +275,8 @@ const findSharedEmsByAccountId = async (accountId) => {
       ],
     });
     const ems = sharedEms.map((sharedEm) => {
-      return {
-        acceptedAt: sharedEm.acceptedAt,
-        shareEm: sharedEm.electricMeter,
-      };
+      const { electricMeter, ...value } = sharedEm.dataValues;
+      return value;
     });
     return ems ? ems : [];
   } catch (error) {

@@ -3,10 +3,15 @@ module.exports.URL_EM = {
   shareEm: "/share",
   acceptEm: "/accept",
   rejectdEm: "/reject",
-  allEms: "/all",
+  getEms: "/get-ems",
+  deleteEm: "/delete",
 };
 
 module.exports.URL_ACCOUNT = {
   signIn: "/sign-in",
   signUp: "/sign-up",
+};
+
+module.exports.URL_HOME = {
+  getHomes: "get-homes",
 };
