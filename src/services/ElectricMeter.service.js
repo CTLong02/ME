@@ -84,56 +84,24 @@ const findAccountByEMId = async (electricMeterId) => {
 
 const findEMsByAcountId = async (accountId) => {
   try {
-    const account = await Account.findOne({
-      where: { accountId },
-      attributes: { exclude: ["createdAt", "updatedAt", "pass"] },
-      include: [
-        {
+    const ownEMs = await ElectricMeter.findAll({
+      include: {
+        model: Room,
+        as: "room",
+        required: true,
+        include: {
           model: Home,
-          attributes: { exclude: ["createdAt", "updatedAt", "accountId"] },
-          as: "homes",
-          order: [["createdAt", "ASC"]],
-          include: [
-            {
-              model: Room,
-              attributes: { exclude: ["createdAt", "updatedAt", "homeId"] },
-              order: [["createdAt", "ASC"]],
-              as: "rooms",
-              required: true,
-              include: [
-                {
-                  model: ElectricMeter,
-                  as: "electricMeters",
-                  order: [["createdAt", "ASC"]],
-                  required: false,
-                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
-                },
-                {
-                  model: ElectricMeterShare,
-                  where: {
-                    accepted: 1,
-                  },
-                  required: false,
-                  as: "electricMeterShares",
-                  order: [["createdAt", "ASC"]],
-                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
-                  include: [
-                    {
-                      model: ElectricMeter,
-                      as: "electricMeter",
-                      attributes: {
-                        exclude: ["createdAt", "updatedAt", "roomId"],
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
+          as: "home",
+          required: true,
+          include: {
+            model: Account,
+            where: { accountId },
+            required: true,
+          },
         },
-      ],
+      },
     });
-    // const electricMeters
+    return ownEMs ? ownEMs : null;
   } catch (error) {
     return null;
   }

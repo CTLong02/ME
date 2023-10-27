@@ -1,4 +1,5 @@
 const ElectricMeterShare = require("../models/ElectricMeterShare");
+const ElectricMeter = require("../models/ElectricMeter");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
 const Account = require("../models/Account");
@@ -231,6 +232,36 @@ const updateEMShare = async ({
   }
 };
 
+const findSharedEmsByAccountId = async (accountId) => {
+  try {
+    const sharedEms = await ElectricMeterShare.findAll({
+      include: {
+        model: ElectricMeter,
+        as: "electricMeter",
+        required: true,
+        include: {
+          model: Room,
+          as: "room",
+          required: true,
+          include: {
+            model: Home,
+            as: "home",
+            required: true,
+            include: {
+              model: Account,
+              where: { accountId },
+              as: "account",
+              required: true,
+            },
+          },
+        },
+      },
+    });
+  } catch (error) {
+    return null;
+  }
+};
+
 module.exports = {
   createEMShareForAnAccount,
   findAccountByEMShareId,
@@ -238,4 +269,5 @@ module.exports = {
   findShareAccountByEMId,
   deleteEMShare,
   updateEMShare,
+  findSharedEmsByAccountId,
 };
