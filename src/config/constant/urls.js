@@ -3,6 +3,7 @@ module.exports.URL_EM = {
   shareEm: "/share",
   acceptEm: "/accept",
   rejectdEm: "/reject",
+  allEms: "/all",
 };
 
 module.exports.URL_ACCOUNT = {

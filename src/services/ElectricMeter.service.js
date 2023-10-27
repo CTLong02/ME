@@ -85,6 +85,8 @@ const findAccountByEMId = async (electricMeterId) => {
 const findEMsByAcountId = async (accountId) => {
   try {
     const ownEMs = await ElectricMeter.findAll({
+      order: [["createdAt", "ASC"]],
+      attributes: { exclude: ["updatedAt"] },
       include: {
         model: Room,
         as: "room",
@@ -94,6 +96,7 @@ const findEMsByAcountId = async (accountId) => {
           as: "home",
           required: true,
           include: {
+            as: "account",
             model: Account,
             where: { accountId },
             required: true,
@@ -101,9 +104,9 @@ const findEMsByAcountId = async (accountId) => {
         },
       },
     });
-    return ownEMs ? ownEMs : null;
+    return ownEMs ? ownEMs : [];
   } catch (error) {
-    return null;
+    return [];
   }
 };
 module.exports = { addEM, findEMById, findAccountByEMId, findEMsByAcountId };

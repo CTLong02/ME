@@ -18,8 +18,10 @@ const {
   findShareAccountByEMId,
   deleteEMShare,
   updateEMShare,
-  e,
+  findSharedEmsByAccountId,
 } = require("../services/ElectricMeterShare.service");
+const { findEMsByAcountId } = require("../services/ElectricMeter.service");
+const { lang } = require("moment");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -253,6 +255,7 @@ const acceptEmShare = async (req, res) => {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
+
 //Từ chối chia sẻ
 const rejectEMShare = async (req, res) => {
   try {
@@ -282,4 +285,47 @@ const rejectEMShare = async (req, res) => {
   }
 };
 
-module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare };
+// Lấy tất cả các thiết bị (cả sở hữu và được chia sẻ)
+const allEms = async (req, res) => {
+  try {
+    const account = req.account;
+    const ownEMs = await findEMsByAcountId(account.accountId);
+    const sharedEms = await findSharedEmsByAccountId(account.accountId);
+    const ems = [];
+    const lOwnEms = ownEMs.length;
+    const lSharedEms = sharedEms.length;
+    let i = 0;
+    let j = 0;
+    while (i < lOwnEms || j < lSharedEms) {
+      if (i < lOwnEms && j < lSharedEms) {
+        const { acceptedAt, shareEm } = sharedEms[j];
+        if (ownEMs[i]["createdAt"] < acceptedAt) {
+          ems.push(ownEMs[i]);
+          i++;
+        } else {
+          ems.push(shareEm);
+          j++;
+        }
+      } else if (i < lOwnEms) {
+        ems.push(ownEMs[i]);
+        i++;
+      } else {
+        const { shareEm } = sharedEms[j];
+        ems.push(shareEm);
+        j++;
+      }
+    }
+    responseSuccess(res, ResponseStatus.SUCCESS, {
+      electricMeters: [
+        ...ems.map((em) => {
+          const { room, ...value } = em.dataValues;
+          return value;
+        }),
+      ],
+    });
+  } catch (error) {
+    responseSuccess(res, ResponseStatus.SUCCESS, { electricMeters: [] });
+  }
+};
+
+module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare, allEms };

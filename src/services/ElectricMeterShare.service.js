@@ -235,11 +235,16 @@ const updateEMShare = async ({
 const findSharedEmsByAccountId = async (accountId) => {
   try {
     const sharedEms = await ElectricMeterShare.findAll({
-      include: {
-        model: ElectricMeter,
-        as: "electricMeter",
-        required: true,
-        include: {
+      where: { accepted: 1 },
+      order: [["acceptedAt", "ASC"]],
+      include: [
+        {
+          model: ElectricMeter,
+          as: "electricMeter",
+          required: true,
+          attributes: { exclude: ["updatedAt"] },
+        },
+        {
           model: Room,
           as: "room",
           required: true,
@@ -249,16 +254,23 @@ const findSharedEmsByAccountId = async (accountId) => {
             required: true,
             include: {
               model: Account,
-              where: { accountId },
               as: "account",
+              where: { accountId },
               required: true,
             },
           },
         },
-      },
+      ],
     });
+    const ems = sharedEms.map((sharedEm) => {
+      return {
+        acceptedAt: sharedEm.acceptedAt,
+        shareEm: sharedEm.electricMeter,
+      };
+    });
+    return ems ? ems : [];
   } catch (error) {
-    return null;
+    return [];
   }
 };
 
