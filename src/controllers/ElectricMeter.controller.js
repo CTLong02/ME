@@ -337,4 +337,14 @@ const getEms = async (req, res) => {
   }
 };
 
-module.exports = { addEM, shareEm, acceptEmShare, rejectEMShare, getEms };
+// Xem chi tiết chỉ số công tơ
+const viewDetailEm = async (req, res) => {};
+
+module.exports = {
+  addEM,
+  shareEm,
+  acceptEmShare,
+  rejectEMShare,
+  getEms,
+  viewDetailEm,
+};

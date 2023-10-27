@@ -32,11 +32,11 @@ const createEMShareForAnAccount = async ({
 const findAccountByEMShareId = async (electricMeterId, accountId) => {
   try {
     const account = await ElectricMeterShare.findOne({
-      where: { electricMeterId, accountId },
+      where: { electricMeterId },
       attributes: [
         "electricMeterShareId",
         "roleShare",
-        [(Sequelize.col("room.home.account.accountId"), "accountId")],
+        [Sequelize.col("room.home.account.accountId"), "accountId"],
         [Sequelize.col("room.name"), "roomname"],
         [Sequelize.col("room.home.name"), "homename"],
       ],
@@ -51,7 +51,9 @@ const findAccountByEMShareId = async (electricMeterId, accountId) => {
               model: Home,
               as: "home",
               required: true,
-              include: [{ model: Account, as: "account" }],
+              include: [
+                { model: Account, as: "account", where: { accountId } },
+              ],
             },
           ],
         },

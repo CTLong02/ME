@@ -5,6 +5,7 @@ module.exports.URL_EM = {
   rejectdEm: "/reject",
   getEms: "/get-ems",
   deleteEm: "/delete",
+  detailEm: "/detail",
 };
 
 module.exports.URL_ACCOUNT = {

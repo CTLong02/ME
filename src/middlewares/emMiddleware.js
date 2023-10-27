@@ -65,7 +65,10 @@ const ownEMMiddleware = async (req, res, next) => {
 const permisionEmMiddleware = async (req, res, next) => {
   try {
     let myEmRole;
-    const { electricMeterId } = req.body;
+    let electricMeterId = req.body.electricMeterId;
+    electricMeterId = req.query.electricMeterId
+      ? req.query.electricMeterId
+      : electricMeterId;
     if (!electricMeterId) {
       return responseFailed(
         res,
@@ -82,7 +85,7 @@ const permisionEmMiddleware = async (req, res, next) => {
         "Không tìm thấy thiết bị"
       );
     }
-    const url = req.url;
+    const url = req._parsedUrl.pathname;
     const permisionRoles = API_WITH_EM_ROLE[url];
     const findedAccountByEMId = await findAccountByEMId(electricMeterId);
     if (findedAccountByEMId && accountId === findedAccountByEMId.accountId) {
