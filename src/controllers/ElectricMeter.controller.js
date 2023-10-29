@@ -4,7 +4,11 @@ const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const { createRoom, deleteRoom } = require("../services/Room.service");
 const { createHome, deleteHome } = require("../services/Home.service");
-const { getLastNewscast } = require("../services/Newscast.service");
+const {
+  getLastNewscast,
+  getByDay,
+  getOnHour,
+} = require("../services/Newscast.service");
 const { joinAccount } = require("../services/Account.service");
 const {
   responseFailed,
@@ -14,10 +18,7 @@ const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
 const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
-const {
-  handleConnFirmware,
-  handleUpdateFirmware,
-} = require("../utils/helper/AppHelper");
+const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
 const moment = require("moment");
 const {
   createEMShareForAnAccount,
@@ -383,7 +384,38 @@ const viewDetailEm = async (req, res) => {
 // Chỉ số công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
-    const { day, moth, years } = req.query;
+    const { day, month, year } = req.query;
+    const em = req.em;
+    if (!day || !month || !year) {
+      responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const iDay = Number.parseInt(day);
+    const iMonth = Number.parseInt(month);
+    const iYear = Number.parseInt(year);
+    const statistics = [];
+    for (let i = 0; i <= 23; i++) {
+      const newcastsOnHour = await getOnHour({
+        electricMeterId: em.electricMeterId,
+        hour: i,
+        day: iDay,
+        month: iMonth,
+        year: iYear,
+      });
+      console.log(i, newcastsOnHour[0]?.energy);
+      if (newcastsOnHour.length <= 1) {
+        statistics.push({ hour: i, energy: 0 });
+        continue;
+      }
+      let sum = 0;
+      for (let j = 1; j < newcastsOnHour.length; j++) {
+        if (newcastsOnHour[j].energy !== 0) {
+          sum += newcastsOnHour[j].energy - newcastsOnHour[j - 1].energy;
+        }
+      }
+      sum = Number.parseFloat(sum.toFixed(2));
+      statistics.push({ hour: i, energy: sum });
+    }
+    responseSuccess(res, ResponseStatus.SUCCESS, { statistics });
   } catch (error) {
     responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
