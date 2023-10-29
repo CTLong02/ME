@@ -4,6 +4,7 @@ const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const { createRoom, deleteRoom } = require("../services/Room.service");
 const { createHome, deleteHome } = require("../services/Home.service");
+const { getLastNewscast } = require("../services/Newscast.service");
 const { joinAccount } = require("../services/Account.service");
 const {
   responseFailed,
@@ -12,6 +13,12 @@ const {
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
+const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
+const {
+  handleConnFirmware,
+  handleUpdateFirmware,
+} = require("../utils/helper/AppHelper");
+const moment = require("moment");
 const {
   createEMShareForAnAccount,
   findShareAccountsByEMId,
@@ -20,7 +27,10 @@ const {
   updateEMShare,
   findSharedEmsByAccountId,
 } = require("../services/ElectricMeterShare.service");
-const { findEMsByAcountId } = require("../services/ElectricMeter.service");
+const {
+  findEMsByAcountId,
+  findEMById,
+} = require("../services/ElectricMeter.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -338,7 +348,46 @@ const getEms = async (req, res) => {
 };
 
 // Xem chi tiết chỉ số công tơ
-const viewDetailEm = async (req, res) => {};
+const viewDetailEm = async (req, res) => {
+  try {
+    const em = req.em;
+    const emInfor = await findEMById(em.electricMeterId);
+    const lastNewscast = await getLastNewscast(em.electricMeterId);
+    if (!lastNewscast) {
+      const emptyNewscast = {
+        current: 0,
+        voltage: 0,
+        power: 0,
+        energy: 0,
+        temp: 0,
+        load: 1,
+        update: UPDATE_FIRMWARE.not_update,
+        datetime: moment().format("LTS"),
+      };
+      responseSuccess(res, ResponseStatus.SUCCESS, {
+        electricMeter: { ...emptyNewscast, ...emInfor },
+      });
+    }
+    responseSuccess(res, ResponseStatus.SUCCESS, {
+      electricMeter: {
+        ...lastNewscast,
+        update: handleUpdateFirmware(lastNewscast.update),
+        ...emInfor,
+      },
+    });
+  } catch (error) {
+    responseFailed(res, ResponseStatus.BAD_GATEWAY, "Lỗi server");
+  }
+};
+
+// Chỉ số công tơ theo ngày
+const viewReportByDay = async (req, res) => {
+  try {
+    const { day, moth, years } = req.query;
+  } catch (error) {
+    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
 
 module.exports = {
   addEM,
@@ -347,4 +396,5 @@ module.exports = {
   rejectEMShare,
   getEms,
   viewDetailEm,
+  viewReportByDay,
 };

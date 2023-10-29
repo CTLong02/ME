@@ -13,6 +13,7 @@ const {
   rejectEMShare,
   getEms,
   viewDetailEm,
+  viewReportByDay,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -39,6 +40,12 @@ ElectricMeterRouter.get(
   URL_EM.detailEm,
   [authMiddleware, permisionEmMiddleware],
   viewDetailEm
+);
+
+ElectricMeterRouter.get(
+  URL_EM.viewReportByDay,
+  [authMiddleware, permisionEmMiddleware],
+  viewReportByDay
 );
 
 module.exports = ElectricMeterRouter;

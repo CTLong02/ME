@@ -16,27 +16,15 @@ route(app);
 const { conectDB, createTable } = require("./config/database/connect");
 createTable();
 
-const { insertNewscast } = require("./services/Newscast.service");
 //mqtt
+const { onMessage } = require("./services/mqtt.service");
 const client = require("./config/mqtt/connect");
 client.on("connect", () => {
-  console.log("connect mqtt");
-  client.subscribe("SM_EL_MT/#", () => {
-    console.log("subribe");
-  });
+  client.subscribe("SM_EL_MT/#", () => {});
 });
 
 client.on("message", (topic, payload) => {
-  if (JSON.parse(payload.toString())?.command === "SYS_BEAT") {
-    insertNewscast(JSON.parse(payload.toString()));
-  } else {
-    console.log(
-      new Date(Date.now()).toLocaleString("vn"),
-      "Receive message",
-      topic,
-      payload.toString()
-    );
-  }
+  onMessage(topic, payload);
 });
 
 app.get("/", (req, res) => {

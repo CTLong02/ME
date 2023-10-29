@@ -41,6 +41,7 @@ const addEM = async ({
 const findEMById = async (electricMeterId) => {
   try {
     const electricMeter = await ElectricMeter.findOne({
+      attributes: { exclude: ["createdAt", "updatedAt"] },
       where: { electricMeterId },
     });
     return !!electricMeter ? electricMeter.dataValues : null;
@@ -123,4 +124,5 @@ const findEMsByAcountId = async ({ roomId, homeId, accountId }) => {
     return [];
   }
 };
+
 module.exports = { addEM, findEMById, findAccountByEMId, findEMsByAcountId };

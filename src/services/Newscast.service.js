@@ -1,5 +1,6 @@
 const Newscast = require("../models/Newscast");
 const ElectricMeter = require("../models/ElectricMeter");
+const { Op } = require("sequelize");
 const insertNewscast = async (data) => {
   try {
     const {
@@ -42,9 +43,30 @@ const insertNewscast = async (data) => {
       temp: Temp,
       load: Load,
       update: Update.toString(),
-      datetime: new Date(Date.now()),
+      datetime: moment(),
     });
   } catch (error) {}
 };
 
-module.exports = { insertNewscast };
+const getLastNewscast = async (electricMeterId) => {
+  try {
+    const newscasts = await Newscast.findAll({
+      where: { electricMeterId },
+      order: [["datetime", "DESC"]],
+      attributes: { exclude: ["updatedAt", "createdAt", "id"] },
+    });
+    return newscasts.length > 0 ? newscasts[0].dataValues : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const getByDay = async ({ electricMeterId, day, month, year }) => {
+  const newscasts = await Newscast.findAll({
+    where: {
+      [Op.and]: [],
+    },
+  });
+};
+
+module.exports = { insertNewscast, getLastNewscast };

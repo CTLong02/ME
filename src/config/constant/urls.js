@@ -6,6 +6,7 @@ module.exports.URL_EM = {
   getEms: "/get-ems",
   deleteEm: "/delete",
   detailEm: "/detail",
+  viewReportByDay: "/view-report-by-day",
 };
 
 module.exports.URL_ACCOUNT = {
