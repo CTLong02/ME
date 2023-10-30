@@ -16,6 +16,7 @@ module.exports.URL_EM = {
 module.exports.URL_ACCOUNT = {
   signIn: "/sign-in",
   signUp: "/sign-up",
+  signOut: "/sign-out",
 };
 
 module.exports.URL_HOME = {

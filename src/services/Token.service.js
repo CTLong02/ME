@@ -8,4 +8,13 @@ const createAccessToken = async ({ accountId, token }) => {
   }
 };
 
-module.exports = { createAccessToken };
+const deleteAccessToken = async (accountId) => {
+  try {
+    const accessToken = await Token.destroy({ where: { accountId } });
+    return accessToken;
+  } catch (error) {
+    return null;
+  }
+};
+
+module.exports = { createAccessToken, deleteAccessToken };

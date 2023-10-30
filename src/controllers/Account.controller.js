@@ -12,8 +12,11 @@ const {
 } = require("../utils/helper/RESTHelper");
 const ResponseStatus = require("../config/constant/response_status");
 const { createToken } = require("../utils/jwt");
-const { createAccessToken } = require("../services/Token.service");
-const moment = require("moment");
+const {
+  createAccessToken,
+  deleteAccessToken,
+} = require("../services/Token.service");
+const { TIME_TOKEN } = require("../config/constant/constant_time");
 
 //Tạo tài khoản
 const signUp = async (req, res) => {
@@ -106,14 +109,31 @@ const signIn = async (req, res) => {
         accountId: findedAccountByEmailAndPass.accountId,
         token: accessToken,
       });
+      setTimeout(() => {
+        deleteAccessToken(findedAccountByEmailAndPass.accountId);
+      }, TIME_TOKEN);
       return responseSuccess(res, ResponseStatus.SUCCESS, {
         account: { ...join, accessToken },
       });
     }
   } catch (error) {
-    console.log(moment().format("LTS"), "error", error.message);
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
-module.exports = { signUp, signIn };
+// Đăng xuất
+const signOut = async (req, res) => {
+  try {
+    const { accountId } = req.account;
+    await deleteAccessToken(accountId);
+    responseSuccess(res, ResponseStatus.SUCCESS);
+  } catch (error) {
+    return responseFailed(
+      res,
+      ResponseStatus.INTERNAL_SERVER_ERROR,
+      "Xảy ra lỗi khi đăng xuất"
+    );
+  }
+};
+
+module.exports = { signUp, signIn, signOut };
