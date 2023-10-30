@@ -105,6 +105,7 @@ const signIn = async (req, res) => {
       }
       const join = await joinAccount(findedAccountByEmailAndPass.accountId);
       const accessToken = createToken(findedAccountByEmailAndPass);
+      await deleteAccessToken(findedAccountByEmailAndPass.accountId);
       const token = await createAccessToken({
         accountId: findedAccountByEmailAndPass.accountId,
         token: accessToken,
