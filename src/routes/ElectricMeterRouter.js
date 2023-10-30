@@ -64,7 +64,7 @@ ElectricMeterRouter.get(
   viewReportByMonth
 );
 
-ElectricMeterRouter.post(
+ElectricMeterRouter.put(
   URL_EM.renameEm,
   [authMiddleware, permisionEmMiddleware],
   renameEm
