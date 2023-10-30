@@ -349,6 +349,14 @@ const getEms = async (req, res) => {
   }
 };
 
+//Thêm lịch tình
+const addTimer = async (req, res) => {
+  try {
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
 // Xem chi tiết chỉ số công tơ
 const viewDetailEm = async (req, res) => {
   try {
@@ -488,6 +496,7 @@ module.exports = {
   acceptEmShare,
   rejectEMShare,
   getEms,
+  addTimer,
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,

@@ -12,6 +12,7 @@ const {
   acceptEmShare,
   rejectEMShare,
   getEms,
+  addTimer,
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
@@ -37,6 +38,13 @@ ElectricMeterRouter.post(
 );
 
 ElectricMeterRouter.get(URL_EM.getEms, [authMiddleware], getEms);
+
+ElectricMeterRouter.get(
+  URL_EM.addTimer,
+  [authMiddleware, permisionEmMiddleware],
+  addTimer
+);
+
 ElectricMeterRouter.get(
   URL_EM.detailEm,
   [authMiddleware, permisionEmMiddleware],
