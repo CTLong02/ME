@@ -7,6 +7,8 @@ module.exports.URL_EM = {
   deleteEm: "/delete",
   detailEm: "/detail",
   viewReportByDay: "/view-report-by-day",
+  viewReportByMonth: "/view-report-by-month",
+  viewReportByYear: "/view-report-by-year",
 };
 
 module.exports.URL_ACCOUNT = {

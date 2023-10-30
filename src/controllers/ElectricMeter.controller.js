@@ -2,11 +2,12 @@ const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
+const { getDaysInMonth } = require("date-fns");
 const { createRoom, deleteRoom } = require("../services/Room.service");
 const { createHome, deleteHome } = require("../services/Home.service");
 const {
   getLastNewscast,
-  getByDay,
+  getOnDay,
   getOnHour,
 } = require("../services/Newscast.service");
 const { joinAccount } = require("../services/Account.service");
@@ -381,13 +382,13 @@ const viewDetailEm = async (req, res) => {
   }
 };
 
-// Chỉ số công tơ theo ngày
+// Báo cáo công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
     const { day, month, year } = req.query;
     const em = req.em;
     if (!day || !month || !year) {
-      responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     const iDay = Number.parseInt(day);
     const iMonth = Number.parseInt(month);
@@ -401,7 +402,6 @@ const viewReportByDay = async (req, res) => {
         month: iMonth,
         year: iYear,
       });
-      console.log(i, newcastsOnHour[0]?.energy);
       if (newcastsOnHour.length <= 1) {
         statistics.push({ hour: i, energy: 0 });
         continue;
@@ -415,9 +415,70 @@ const viewReportByDay = async (req, res) => {
       sum = Number.parseFloat(sum.toFixed(2));
       statistics.push({ hour: i, energy: sum });
     }
-    responseSuccess(res, ResponseStatus.SUCCESS, { statistics });
+    const averageOnday = Number.parseFloat(
+      (statistics.reduce((acc, cur) => acc + cur.energy, 0) / 24).toFixed(2)
+    );
+    const sortStatistics = [...statistics].sort((a, b) => a.energy - b.energy);
+    const maxOnDay = sortStatistics[sortStatistics.length - 1].energy;
+    const minOnDay = sortStatistics[0].energy;
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      statistics,
+      minOnDay,
+      averageOnday,
+      maxOnDay,
+    });
   } catch (error) {
-    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
+  }
+};
+
+//Báo cáo công tơ theo tháng
+const viewReportByMonth = async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    const em = req.em;
+    if (!month || !year) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const iMonth = Number.parseInt(month);
+    const iYear = Number.parseInt(year);
+    const date = new Date(iYear, iMonth - 1);
+    const days = getDaysInMonth(date);
+    const statistics = [];
+    for (let i = 1; i <= days; i++) {
+      const newcastsOnDay = await getOnDay({
+        electricMeterId: em.electricMeterId,
+        day: i,
+        month: iMonth,
+        year: iYear,
+      });
+      if (newcastsOnDay.length <= 1) {
+        statistics.push({ day: i, energy: 0 });
+        continue;
+      }
+      let sum = 0;
+      for (let j = 1; j < newcastsOnDay.length; j++) {
+        if (newcastsOnDay[j].energy !== 0) {
+          sum += newcastsOnDay[j].energy - newcastsOnDay[j - 1].energy;
+        }
+      }
+      sum = Number.parseFloat(sum.toFixed(2));
+      statistics.push({ day: i, energy: sum });
+    }
+    const averageOnMonth = Number.parseFloat(
+      (statistics.reduce((acc, cur) => acc + cur.energy, 0) / days).toFixed(2)
+    );
+    const sortStatistics = [...statistics].sort((a, b) => a.energy - b.energy);
+    const maxOnMonth = sortStatistics[sortStatistics.length - 1].energy;
+    const minOnMonth = sortStatistics[0].energy;
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      statistics,
+      minOnMonth,
+      averageOnMonth,
+      maxOnMonth,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
@@ -429,4 +490,5 @@ module.exports = {
   getEms,
   viewDetailEm,
   viewReportByDay,
+  viewReportByMonth,
 };

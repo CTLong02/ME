@@ -99,10 +99,23 @@ const getOnHour = async ({ electricMeterId, hour, day, month, year }) => {
   }
 };
 
-const getByDay = async ({ electricMeterId, day, month, year }) => {
+const getOnDay = async ({ electricMeterId, day, month, year }) => {
   try {
+    const startPreDay = new Date(year, month - 1, day - 1);
     const start = new Date(year, month - 1, day);
     const end = new Date(year, month - 1, day + 1);
+    const newcastsPreDay = await Newscast.findAll({
+      where: {
+        electricMeterId,
+        datetime: {
+          [Op.and]: {
+            [Op.gte]: startPreDay,
+            [Op.lt]: start,
+          },
+        },
+      },
+      order: [["datetime", "DESC"]],
+    });
     const newscasts = await Newscast.findAll({
       where: {
         electricMeterId,
@@ -114,10 +127,14 @@ const getByDay = async ({ electricMeterId, day, month, year }) => {
         },
       },
     });
-    return newscasts;
+    const addedNewscasts =
+      newcastsPreDay.length > 0
+        ? [newcastsPreDay[0], ...newscasts]
+        : [...newscasts];
+    return addedNewscasts.map((newscast) => newscast.dataValues);
   } catch (error) {
     return [];
   }
 };
 
-module.exports = { insertNewscast, getLastNewscast, getByDay, getOnHour };
+module.exports = { insertNewscast, getLastNewscast, getOnDay, getOnHour };
