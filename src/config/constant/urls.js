@@ -1,4 +1,5 @@
 module.exports.URL_EM = {
+  renameEm: "/rename",
   addEm: "/add",
   shareEm: "/share",
   acceptEm: "/accept",

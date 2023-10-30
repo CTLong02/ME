@@ -125,4 +125,44 @@ const findEMsByAcountId = async ({ roomId, homeId, accountId }) => {
   }
 };
 
-module.exports = { addEM, findEMById, findAccountByEMId, findEMsByAcountId };
+const updateEm = async ({
+  electricMeterId,
+  ver,
+  net,
+  simImei,
+  conn,
+  signal,
+  strength,
+  ssid,
+  pass,
+  rtc,
+  name,
+  macAddress,
+}) => {
+  try {
+    const em = await ElectricMeter.findOne({ where: { electricMeterId } });
+    em.ver = ver ? ver : em.ver;
+    em.net = net ? net : em.net;
+    em.simImei = simImei ? simImei : em.simImei;
+    em.conn = conn ? conn : em.conn;
+    em.signal = signal ? signal : em.signal;
+    em.strength = strength ? strength : em.strength;
+    em.ssid = ssid ? ssid : em.ssid;
+    em.pass = pass ? pass : em.pass;
+    em.rtc = rtc ? rtc : em.rtc;
+    em.name = name ? name : em.name;
+    em.macAddress = macAddress ? macAddress : em.macAddress;
+    await em.save();
+    return em.dataValues;
+  } catch (error) {
+    return null;
+  }
+};
+
+module.exports = {
+  addEM,
+  findEMById,
+  findAccountByEMId,
+  findEMsByAcountId,
+  updateEm,
+};

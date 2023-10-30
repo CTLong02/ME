@@ -32,6 +32,7 @@ const {
 const {
   findEMsByAcountId,
   findEMById,
+  updateEm,
 } = require("../services/ElectricMeter.service");
 
 // Thêm công tơ vào tài khoản
@@ -490,6 +491,30 @@ const viewReportByMonth = async (req, res) => {
   }
 };
 
+// Sửa tên công tơ
+const renameEm = async (req, res) => {
+  try {
+    const em = req.em;
+    const { name } = req.body;
+    if (!name) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    }
+    const newEm = await updateEm({ electricMeterId: em.electricMeterId, name });
+    if (!newEm) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_GATEWAY,
+        "Cập nhật không thành công"
+      );
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      electricMeter: newEm,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -500,4 +525,5 @@ module.exports = {
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
+  renameEm,
 };
