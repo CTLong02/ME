@@ -65,6 +65,7 @@ Newscast.init(
     },
     datetime: {
       type: DataTypes.DATE,
+      defaultValue: new Date(Date.now()),
     },
   },
   {

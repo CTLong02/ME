@@ -229,12 +229,11 @@ const updateEMShare = async ({
 const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
   try {
     const sharedEms = await ElectricMeterShare.findAll({
-      where: { accepted: 1 },
-      order: [["acceptedAt", "ASC"]],
+      order: [["createdAt", "ASC"]],
       attributes: [
         "electricMeterId",
-        "acceptedAt",
         ["roleShare", "role"],
+        [Sequelize.col("electricMeter.createdAt"), "acceptedAt"],
         [Sequelize.col("electricMeter.name"), "name"],
         [Sequelize.col("room.roomId"), "roomId"],
         [Sequelize.col("room.name"), "roomname"],

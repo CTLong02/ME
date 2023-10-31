@@ -1,6 +1,6 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
-const ElectricMeterShare = require("./ElectricMeterShare");
+const Invitation = require("./Invitation");
 const Home = require("./Home");
 const Token = require("./Token");
 const { ACCOUNT_LEVEL } = require("../config/constant/constant_model");
@@ -54,4 +54,12 @@ Account.init(
 Account.hasMany(Home, { as: "homes", foreignKey: { name: "accountId" } });
 Home.belongsTo(Account, { as: "account", foreignKey: { name: "accountId" } });
 Account.hasOne(Token, { as: "token", foreignKey: { name: "accountId" } });
+Account.hasMany(Invitation, {
+  as: "invitations",
+  foreignKey: { name: "accountId" },
+});
+Invitation.belongsTo(Account, {
+  as: "account",
+  foreignKey: { name: "accountId" },
+});
 module.exports = Account;

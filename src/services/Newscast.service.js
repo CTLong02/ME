@@ -43,7 +43,6 @@ const insertNewscast = async (data) => {
       temp: Temp,
       load: Load,
       update: Update.toString(),
-      datetime: moment(),
     });
   } catch (error) {}
 };

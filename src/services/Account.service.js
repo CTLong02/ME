@@ -94,14 +94,20 @@ const joinAccount = async (accountId) => {
               as: "rooms",
               required: true,
               include: [
-                { model: ElectricMeter, as: "electricMeters", required: false },
+                {
+                  model: ElectricMeter,
+                  as: "electricMeters",
+                  required: false,
+                  attributes: { exclude: ["createdAt", "updatedAt"] },
+                },
                 {
                   model: ElectricMeterShare,
                   as: "electricMeterShares",
-                  where: { accepted: 1 },
+                  order: [["datetime", "ASC"]],
                   required: false,
                   include: {
                     model: ElectricMeter,
+                    attributes: { exclude: ["createdAt", "updatedAt"] },
                     as: "electricMeter",
                     required: true,
                   },
@@ -120,7 +126,8 @@ const joinAccount = async (accountId) => {
           room.dataValues;
         const electricMeterShareds = electricMeterShares.map(
           (electricMeterShare) => {
-            const { acceptedAt, roleShare } = electricMeterShare.dataValues;
+            const { roleShare } = electricMeterShare.dataValues;
+            const acceptedAt = electricMeterShare.dataValues.datetime;
             return {
               acceptedAt,
               role: roleShare,

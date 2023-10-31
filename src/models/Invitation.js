@@ -1,25 +1,37 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const { ROLE_EM } = require("../config/constant/constant_model");
-class ElectricMeterShare extends Model {}
-ElectricMeterShare.init(
+class Invitation extends Model {}
+Invitation.init(
   {
-    electricMeterShareId: {
+    invitationId: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    roleShare: {
+    role: {
       type: DataTypes.ENUM,
       allowNull: false,
       values: [...Object.values(ROLE_EM)],
       defaultValue: ROLE_EM.read_only,
     },
+    datetime: {
+      type: DataTypes.DATE,
+      defaultValue: new Date(Date.now()),
+    },
+    roomname: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    homename: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
   },
   {
-    modelName: "ElectricMeterShare",
+    modelName: "Invitation",
     sequelize,
   }
 );
 
-module.exports = ElectricMeterShare;
+module.exports = Invitation;
