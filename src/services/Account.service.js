@@ -1,14 +1,11 @@
-const { Sequelize, Op } = require("sequelize");
+const { Sequelize } = require("sequelize");
 const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const ElectricMeterShare = require("../models/ElectricMeterShare");
+const Invitation = require("../models/Invitation");
 const { hashPw, comparePw } = require("../utils/helper/AccountHelper");
-const {
-  responseSuccessService,
-  responseFailedService,
-} = require("../utils/helper/RESTHelper");
 const { EM_ROLES } = require("../config/constant/contants_app");
 const createAccountByEmailService = async (email, pass) => {
   try {
@@ -172,6 +169,32 @@ const joinAccount = async (accountId) => {
     return null;
   }
 };
+
+const getListInvitationInformation = async (accountId) => {
+  try {
+    const invitations = await Invitation.findAll({
+      where: { accountId },
+      attributes: [
+        "invitationId",
+        "datetime",
+        [Sequelize.col("role"), "roleShare"],
+        [Sequelize.col("electricMeter.electricMeterId"), "electricMeterId"],
+        [Sequelize.col("account.accountId"), "accountId"],
+        [Sequelize.col("electricMeter.name"), "electricMeterName"],
+        [Sequelize.col("account.fullname"), "fullname"],
+        [Sequelize.col("account.email"), "email"],
+        [Sequelize.col("account.phonenumber"), "phonenumber"],
+      ],
+      include: [
+        { model: Account, as: "account", required: true },
+        { model: ElectricMeter, as: "electricMeter", required: true },
+      ],
+    });
+    return invitations;
+  } catch (error) {
+    return [];
+  }
+};
 module.exports = {
   createAccountByEmailService,
   createAccountByPhoneNumberService,
@@ -179,4 +202,5 @@ module.exports = {
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
   joinAccount,
+  getListInvitationInformation,
 };

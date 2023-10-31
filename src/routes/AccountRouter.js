@@ -11,5 +11,10 @@ AccountRouter.post(
   [authMiddleware],
   AccountController.signOut
 );
+AccountRouter.get(
+  URL_ACCOUNT.listInvitation,
+  [authMiddleware],
+  AccountController.getListInvitation
+);
 
 module.exports = AccountRouter;

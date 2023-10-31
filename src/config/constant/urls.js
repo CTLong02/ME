@@ -18,6 +18,7 @@ module.exports.URL_ACCOUNT = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   signOut: "/sign-out",
+  listInvitation: "/list-invitation",
 };
 
 module.exports.URL_HOME = {

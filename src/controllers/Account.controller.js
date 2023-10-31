@@ -5,6 +5,7 @@ const {
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
   joinAccount,
+  getListInvitationInformation,
 } = require("../services/Account.service");
 const {
   responseFailed,
@@ -17,6 +18,9 @@ const {
   deleteAccessToken,
 } = require("../services/Token.service");
 const { TIME_TOKEN } = require("../config/constant/constant_time");
+const {
+  findInvitationsByAccountId,
+} = require("../services/Invitation.service");
 
 //Tạo tài khoản
 const signUp = async (req, res) => {
@@ -137,4 +141,20 @@ const signOut = async (req, res) => {
   }
 };
 
-module.exports = { signUp, signIn, signOut };
+//Lấy danh sách lời mời
+const getListInvitation = async (req, res) => {
+  try {
+    const { accountId } = req.account;
+    const invitations = await getListInvitationInformation(accountId);
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      invitations: invitations.map((invitation) => {
+        const { electricMeter, account, ...data } = invitation.dataValues;
+        return data;
+      }),
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+  }
+};
+
+module.exports = { signUp, signIn, signOut, getListInvitation };
