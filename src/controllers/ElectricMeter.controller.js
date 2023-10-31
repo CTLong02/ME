@@ -196,6 +196,15 @@ const shareEm = async (req, res) => {
     const { accountId } = req.recipientAccount;
     const { electricMeterId, roomname, homename } = req.em;
 
+    const share = await findAccountByEMShareId(electricMeterId, accountId);
+    if (share) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Tài khoản này đã được chia sẻ"
+      );
+    }
+
     const invitaton = await findInvitationByEMIdAndAccoutId({
       electricMeterId,
       accountId,
