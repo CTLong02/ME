@@ -17,6 +17,7 @@ const {
   viewReportByDay,
   viewReportByMonth,
   renameEm,
+  moveToRoom,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -68,6 +69,12 @@ ElectricMeterRouter.put(
   URL_EM.renameEm,
   [authMiddleware, permisionEmMiddleware],
   renameEm
+);
+
+ElectricMeterRouter.put(
+  URL_EM.moveToRoom,
+  [authMiddleware, permisionEmMiddleware],
+  moveToRoom
 );
 
 module.exports = ElectricMeterRouter;

@@ -107,7 +107,7 @@ const permisionEmMiddleware = async (req, res, next) => {
     }
 
     const { room, ...em } = findedAccountByEMId;
-    req.em = em;
+    req.em = { ...em, role: myEmRole };
     next();
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");

@@ -93,23 +93,7 @@ const joinAccount = async (accountId) => {
               as: "rooms",
               required: true,
               include: [
-                {
-                  model: ElectricMeter,
-                  as: "electricMeters",
-                  order: [["createdAt", "ASC"]],
-                  required: false,
-                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
-                },
-                {
-                  model: ElectricMeterShare,
-                  where: {
-                    accepted: 1,
-                  },
-                  required: false,
-                  as: "electricMeterShares",
-                  order: [["createdAt", "ASC"]],
-                  attributes: { exclude: ["createdAt", "updatedAt", "roomId"] },
-                },
+                { model: ElectricMeter, as: "electricMeters", required: true },
               ],
             },
           ],

@@ -3,7 +3,13 @@ const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const { getDaysInMonth } = require("date-fns");
-const { createRoom, deleteRoom } = require("../services/Room.service");
+const {
+  createRoom,
+  deleteRoom,
+  updateRoom,
+  checkRoomBelongAccount,
+  findRoomByRoomId,
+} = require("../services/Room.service");
 const { createHome, deleteHome } = require("../services/Home.service");
 const {
   getLastNewscast,
@@ -18,6 +24,7 @@ const {
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
+const { EM_ROLES } = require("../config/constant/contants_app");
 const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
 const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
 const moment = require("moment");
@@ -28,12 +35,14 @@ const {
   deleteEMShare,
   updateEMShare,
   findSharedEmsByAccountId,
+  findAccountByEMShareId,
 } = require("../services/ElectricMeterShare.service");
 const {
   findEMsByAcountId,
   findEMById,
   updateEm,
 } = require("../services/ElectricMeter.service");
+const ElectricMeterShare = require("../models/ElectricMeterShare");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -515,6 +524,37 @@ const renameEm = async (req, res) => {
   }
 };
 
+// Chuyển phòng cho thiết bị
+const moveToRoom = async (req, res) => {
+  try {
+    const { roomId } = req.body;
+    const { electricMeterId, role } = req.em;
+    const { accountId } = req.account;
+    if (!roomId) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+
+    const isBelong = await checkRoomBelongAccount({ accountId, roomId });
+    if (!isBelong) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Không tìm thấy phòng"
+      );
+    }
+
+    const em =
+      role == EM_ROLES.owner
+        ? await ElectricMeter.findOne({ where: { electricMeterId } })
+        : await findAccountByEMShareId(electricMeterId, accountId);
+    em.roomId = roomId;
+    await em.save();
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -526,4 +566,5 @@ module.exports = {
   viewReportByDay,
   viewReportByMonth,
   renameEm,
+  moveToRoom,
 };

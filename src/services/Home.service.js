@@ -1,4 +1,5 @@
 const Home = require("../models/Home");
+const Account = require("../models/Account");
 const createHome = async ({ accountId, name }) => {
   try {
     const home = await Home.create({ accountId, name });
@@ -30,4 +31,36 @@ const findHome = async (homeId) => {
   }
 };
 
-module.exports = { createHome, findHome, deleteHome };
+const getHomesByAccountId = async (accountId) => {
+  try {
+    const homes = await Home.findAll({ where: { accountId } });
+    return homes;
+  } catch (error) {
+    return [];
+  }
+};
+
+const checkHomeBelongAccount = async ({ homeId, accountId }) => {
+  try {
+    const home = await Home.findOne({
+      where: { homeId },
+      include: {
+        model: Account,
+        as: "account",
+        required: true,
+        where: { accountId },
+      },
+    });
+    return !!home;
+  } catch (error) {
+    return false;
+  }
+};
+
+module.exports = {
+  createHome,
+  findHome,
+  deleteHome,
+  getHomesByAccountId,
+  checkHomeBelongAccount,
+};

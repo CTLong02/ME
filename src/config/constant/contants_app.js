@@ -35,4 +35,9 @@ API_WITH_EM_ROLE[URL_EM.viewReportByYear] = [
 
 API_WITH_EM_ROLE[URL_EM.addTimer] = [EM_ROLES.owner];
 API_WITH_EM_ROLE[URL_EM.renameEm] = [EM_ROLES.owner];
+API_WITH_EM_ROLE[URL_EM.moveToRoom] = [
+  EM_ROLES.read_only,
+  EM_ROLES.enable_control,
+  EM_ROLES.owner,
+];
 module.exports = { API_WITH_EM_ROLE, RESPONSE_RESULT, EM_ROLES };

@@ -4,7 +4,28 @@ const {
 } = require("../utils/helper/RESTHelper");
 const ResponseStatus = require("../config/constant/response_status");
 const Home = require("../models/Home");
-const { findHome } = require("../services/Home.service");
+const { createHome, getHomesByAccountId } = require("../services/Home.service");
+
+const addHome = async (req, res) => {
+  try {
+    const { accountId } = req.account;
+    const { name } = req.body;
+    if (!name) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const home = await createHome({ accountId, name });
+    if (home) {
+      const homes = (await getHomesByAccountId(accountId)).map((home) => {
+        const { createdAt, updatedAt, accountId, ...data } = home;
+        return data;
+      });
+      return responseSuccess(res, ResponseStatus.SUCCESS, { homes });
+    }
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+  }
+};
+
 const getHomes = async (req, res) => {};
 const renameHome = async (req, res) => {
   try {
@@ -30,4 +51,4 @@ const renameHome = async (req, res) => {
   }
 };
 
-module.exports = { getHomes, renameHome };
+module.exports = { getHomes, renameHome, addHome };

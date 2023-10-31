@@ -31,7 +31,7 @@ const createEMShareForAnAccount = async ({
 
 const findAccountByEMShareId = async (electricMeterId, accountId) => {
   try {
-    const account = await ElectricMeterShare.findOne({
+    const emShare = await ElectricMeterShare.findOne({
       where: { electricMeterId },
       attributes: [
         "electricMeterShareId",
@@ -52,14 +52,19 @@ const findAccountByEMShareId = async (electricMeterId, accountId) => {
               as: "home",
               required: true,
               include: [
-                { model: Account, as: "account", where: { accountId } },
+                {
+                  model: Account,
+                  as: "account",
+                  where: { accountId },
+                  required: true,
+                },
               ],
             },
           ],
         },
       ],
     });
-    return !!account ? account.dataValues : null;
+    return !!emShare ? emShare : null;
   } catch (error) {
     return null;
   }
@@ -182,6 +187,7 @@ const updateEMShare = async ({
   accountId,
   roleShare,
   accepted,
+  roomId,
 }) => {
   try {
     const emShares = await ElectricMeterShare.findAll({
@@ -225,6 +231,7 @@ const updateEMShare = async ({
           : emShare.accepted;
       emShare.acceptedAt =
         accepted === 1 ? new Date(Date.now()) : emShare.acceptedAt;
+      emShare.roomId = roomId ? roomId : emShare.roomId;
       await emShare.save();
       return emShare;
     }

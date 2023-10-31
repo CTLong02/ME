@@ -10,7 +10,8 @@ module.exports.URL_EM = {
   viewReportByDay: "/view-report-by-day",
   viewReportByMonth: "/view-report-by-month",
   viewReportByYear: "/view-report-by-year",
-  addTimer: "add-timer",
+  addTimer: "/add-timer",
+  moveToRoom: "/move",
 };
 
 module.exports.URL_ACCOUNT = {
@@ -22,8 +23,10 @@ module.exports.URL_ACCOUNT = {
 module.exports.URL_HOME = {
   getHomes: "get-homes",
   rename: "/rename",
+  add: "/add",
 };
 
 module.exports.URL_ROOM = {
   rename: "/rename",
+  add: "/add",
 };
