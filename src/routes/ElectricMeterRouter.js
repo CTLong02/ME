@@ -27,13 +27,13 @@ ElectricMeterRouter.post(
   shareEm
 );
 
-ElectricMeterRouter.post(
+ElectricMeterRouter.put(
   URL_EM.acceptEm,
   [authMiddleware, exitsEMMiddleware],
   acceptEmShare
 );
 
-ElectricMeterRouter.post(
+ElectricMeterRouter.put(
   URL_EM.rejectdEm,
   [authMiddleware, exitsEMMiddleware],
   rejectEMShare

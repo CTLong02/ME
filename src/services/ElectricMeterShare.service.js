@@ -152,27 +152,12 @@ const findShareAccountByEMId = async (electricMeterId, accountId) => {
   }
 };
 
-const deleteEMShare = async (electricMeterId, accountId) => {
+const deleteEMShare = async ({ electricMeterId, accountId }) => {
   try {
     const emShare = await findShareAccountByEMId(electricMeterId, accountId);
     if (!!emShare) {
       await ElectricMeterShare.destroy({
-        where: { electricMeterId },
-        include: [
-          {
-            model: Room,
-            as: "room",
-            include: [
-              {
-                model: Home,
-                as: "home",
-                include: [
-                  { model: Account, as: "account", where: { accountId } },
-                ],
-              },
-            ],
-          },
-        ],
+        where: { electricMeterShareId: emShare.electricMeterShareId },
       });
       return emShare;
     }

@@ -9,6 +9,7 @@ const {
   responseSuccessService,
   responseFailedService,
 } = require("../utils/helper/RESTHelper");
+const { EM_ROLES } = require("../config/constant/contants_app");
 const createAccountByEmailService = async (email, pass) => {
   try {
     const passHash = hashPw(pass);
@@ -93,14 +94,73 @@ const joinAccount = async (accountId) => {
               as: "rooms",
               required: true,
               include: [
-                { model: ElectricMeter, as: "electricMeters", required: true },
+                { model: ElectricMeter, as: "electricMeters", required: false },
+                {
+                  model: ElectricMeterShare,
+                  as: "electricMeterShares",
+                  where: { accepted: 1 },
+                  required: false,
+                  include: {
+                    model: ElectricMeter,
+                    as: "electricMeter",
+                    required: true,
+                  },
+                },
               ],
             },
           ],
         },
       ],
     });
-    return account.dataValues;
+
+    const data = account.dataValues.homes.map((home) => {
+      const { rooms, ...dataHome } = home.dataValues;
+      const newRooms = rooms.map((room) => {
+        const { electricMeters, electricMeterShares, ...dataRoom } =
+          room.dataValues;
+        const electricMeterShareds = electricMeterShares.map(
+          (electricMeterShare) => {
+            const { acceptedAt, roleShare } = electricMeterShare.dataValues;
+            return {
+              acceptedAt,
+              role: roleShare,
+              ...electricMeterShare.electricMeter.dataValues,
+            };
+          }
+        );
+        const lenEMs1 = electricMeters.length;
+        const lenEMs2 = electricMeterShareds.length;
+        let i = 0;
+        let j = 0;
+        const ems = [];
+        while (i < lenEMs1 || j < lenEMs2) {
+          if (i < lenEMs1 && j < lenEMs2) {
+            const { acceptedAt, ...shareEm } = electricMeterShareds[j];
+            if (electricMeters[i].createdAt < acceptedAt) {
+              ems.push({
+                ...electricMeters[i].dataValues,
+                role: EM_ROLES.owner,
+              });
+              i++;
+            } else {
+              ems.push(shareEm);
+              j++;
+            }
+          } else if (i < lenEMs1) {
+            ems.push({ ...electricMeters[i].dataValues, role: EM_ROLES.owner });
+            i++;
+          } else {
+            const { acceptedAt, ...shareEm } = electricMeterShareds[j];
+            ems.push(shareEm);
+            j++;
+          }
+        }
+        return { ...dataRoom, electricMeters: ems };
+      });
+      return { ...dataHome, rooms: newRooms };
+    });
+
+    return { ...account.dataValues, homes: data };
   } catch (error) {
     return null;
   }

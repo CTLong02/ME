@@ -14,7 +14,10 @@ const {
 
 const exitsEMMiddleware = async (req, res, next) => {
   try {
-    const { electricMeterId } = req.body;
+    let { electricMeterId } = req.body;
+    electricMeterId = req.query.electricMeterId
+      ? req.query.electricMeterId
+      : electricMeterId;
     if (!electricMeterId) {
       responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
@@ -24,7 +27,9 @@ const exitsEMMiddleware = async (req, res, next) => {
     }
     req.em = findedEM;
     next();
-  } catch (error) {}
+  } catch (error) {
+    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
 };
 
 const ownEMMiddleware = async (req, res, next) => {
