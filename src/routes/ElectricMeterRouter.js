@@ -18,6 +18,7 @@ const {
   viewReportByMonth,
   renameEm,
   moveToRoom,
+  getAccountSharedList,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -77,4 +78,9 @@ ElectricMeterRouter.put(
   moveToRoom
 );
 
+ElectricMeterRouter.get(
+  URL_EM.sharedList,
+  [authMiddleware, permisionEmMiddleware],
+  getAccountSharedList
+);
 module.exports = ElectricMeterRouter;

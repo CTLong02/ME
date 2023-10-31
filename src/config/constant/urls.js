@@ -12,13 +12,14 @@ module.exports.URL_EM = {
   viewReportByYear: "/view-report-by-year",
   addTimer: "/add-timer",
   moveToRoom: "/move",
+  sharedList: "/share-list",
 };
 
 module.exports.URL_ACCOUNT = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   signOut: "/sign-out",
-  listInvitation: "/list-invitation",
+  listInvitation: "/invitation-list",
 };
 
 module.exports.URL_HOME = {

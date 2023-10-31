@@ -74,20 +74,26 @@ const findShareAccountsByEMId = async (electricMeterId) => {
   try {
     const accounts = await ElectricMeterShare.findAll({
       where: { electricMeterId },
+      order: [["createdAt", "ASC"]],
       attributes: [
+        "roleShare",
+        "createdAt",
         [Sequelize.col("room.home.account.accountId"), "accountId"],
         [Sequelize.col("room.home.account.email"), "email"],
+        [Sequelize.col("room.home.account.fullname"), "fullname"],
         [Sequelize.col("room.home.account.phonenumber"), "phonenumber"],
       ],
       include: [
         {
           model: Room,
           as: "room",
+          required: true,
           include: [
             {
               model: Home,
               as: "home",
-              include: [{ model: Account, as: "account" }],
+              required: true,
+              include: [{ model: Account, as: "account", required: true }],
             },
           ],
         },
@@ -99,9 +105,9 @@ const findShareAccountsByEMId = async (electricMeterId) => {
           const { room, ...shareAccount } = account.dataValues;
           return shareAccount;
         })
-      : null;
+      : [];
   } catch (error) {
-    return null;
+    return [];
   }
 };
 

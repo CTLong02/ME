@@ -5,7 +5,7 @@ const {
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
   joinAccount,
-  getListInvitationInformation,
+  getListInvitationByAccountId,
 } = require("../services/Account.service");
 const {
   responseFailed,
@@ -145,7 +145,7 @@ const signOut = async (req, res) => {
 const getListInvitation = async (req, res) => {
   try {
     const { accountId } = req.account;
-    const invitations = await getListInvitationInformation(accountId);
+    const invitations = await getListInvitationByAccountId(accountId);
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       invitations: invitations.map((invitation) => {
         const { electricMeter, account, ...data } = invitation.dataValues;

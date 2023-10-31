@@ -8,7 +8,7 @@ const {
   createRoom,
   checkRoomBelongAccount,
 } = require("../services/Room.service");
-const { createHome, deleteHome } = require("../services/Home.service");
+const { createHome } = require("../services/Home.service");
 const {
   getLastNewscast,
   getOnDay,
@@ -27,18 +27,16 @@ const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
 const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
 const moment = require("moment");
 const {
-  findShareAccountByEMId,
-  deleteEMShare,
   findSharedEmsByAccountId,
   findAccountByEMShareId,
   createEMShareForAnAccount,
+  findShareAccountsByEMId,
 } = require("../services/ElectricMeterShare.service");
 const {
   createInvitation,
   findInvitationByEMIdAndAccoutId,
-  findInvitationsByEMId,
-  findInvitationsByAccountId,
   deleteInvitation,
+  getListInvitationByEMId,
 } = require("../services/Invitation.service");
 const {
   findEMsByAcountId,
@@ -217,6 +215,10 @@ const shareEm = async (req, res) => {
       homename,
       role: roleShare,
     });
+
+    setTimeout(() => {
+      deleteInvitation({ electricMeterId, accountId });
+    }, TIME.TIME_SHARE_REQUEST);
 
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
   } catch (error) {
@@ -540,6 +542,54 @@ const moveToRoom = async (req, res) => {
   }
 };
 
+// Danh sách các tài khoản được chia sẻ (có thể chấp nhận hoặc chưa)
+const getAccountSharedList = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    const sharedAccount = await findShareAccountsByEMId(electricMeterId);
+    const invitations = await getListInvitationByEMId(electricMeterId);
+    const shareAccounts = [];
+    const lenSharedAccounts = sharedAccount.length;
+    const lenInvitations = invitations.length;
+    let i = 0;
+    let j = 0;
+    while (i < lenSharedAccounts || j < lenInvitations) {
+      if (i < lenSharedAccounts && j < lenInvitations) {
+        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
+        const { datetime, role, electricMeterName, ...invitationData } =
+          invitations[j];
+        if (createdAt < datetime) {
+          shareAccounts.push({ ...sharedData, roleShare, accepted: true });
+          i++;
+        } else {
+          shareAccounts.push({
+            ...invitationData,
+            roleShare: role,
+            accepted: false,
+          });
+          j++;
+        }
+      } else if (i < lenSharedAccounts) {
+        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
+        shareAccounts.push({ ...sharedData, roleShare, accepted: true });
+        i++;
+      } else {
+        const { datetime, role, electricMeterName, ...invitationData } =
+          invitations[j];
+        shareAccounts.push({
+          ...invitationData,
+          roleShare: role,
+          accepted: false,
+        });
+        j++;
+      }
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS, { shareAccounts });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Có lỗi xảy ra");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -552,4 +602,5 @@ module.exports = {
   viewReportByMonth,
   renameEm,
   moveToRoom,
+  getAccountSharedList,
 };

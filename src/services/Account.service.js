@@ -170,7 +170,7 @@ const joinAccount = async (accountId) => {
   }
 };
 
-const getListInvitationInformation = async (accountId) => {
+const getListInvitationByAccountId = async (accountId) => {
   try {
     const invitations = await Invitation.findAll({
       where: { accountId },
@@ -195,6 +195,7 @@ const getListInvitationInformation = async (accountId) => {
     return [];
   }
 };
+
 module.exports = {
   createAccountByEmailService,
   createAccountByPhoneNumberService,
@@ -202,5 +203,5 @@ module.exports = {
   findAccountByPhoneNumberService,
   findAccountByEmailAndPass,
   joinAccount,
-  getListInvitationInformation,
+  getListInvitationByAccountId,
 };

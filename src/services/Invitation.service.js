@@ -1,4 +1,7 @@
+const { Sequelize } = require("sequelize");
 const Invitation = require("../models/Invitation");
+const Account = require("../models/Account");
+const ElectricMeter = require("../models/ElectricMeter");
 const createInvitation = async ({
   electricMeterId,
   accountId,
@@ -68,10 +71,41 @@ const deleteInvitation = async ({ electricMeterId, accountId }) => {
   }
 };
 
+const getListInvitationByEMId = async (electricMeterId) => {
+  try {
+    const invitations = await Invitation.findAll({
+      where: { electricMeterId },
+      order: [["datetime", "ASC"]],
+      attributes: [
+        "datetime",
+        "role",
+        [Sequelize.col("account.accountId"), "accountId"],
+        [Sequelize.col("electricMeter.name"), "electricMeterName"],
+        [Sequelize.col("account.fullname"), "fullname"],
+        [Sequelize.col("account.email"), "email"],
+        [Sequelize.col("account.phonenumber"), "phonenumber"],
+      ],
+      include: [
+        { model: Account, as: "account", required: true },
+        { model: ElectricMeter, as: "electricMeter", required: true },
+      ],
+    });
+    return !!invitations
+      ? invitations.map((invitation) => {
+          const { account, electricMeter, ...data } = invitation.dataValues;
+          return data;
+        })
+      : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 module.exports = {
   createInvitation,
   findInvitationByEMIdAndAccoutId,
   findInvitationsByEMId,
   findInvitationsByAccountId,
   deleteInvitation,
+  getListInvitationByEMId,
 };
