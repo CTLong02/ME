@@ -10,7 +10,7 @@ Room.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    name: {
+    roomname: {
       type: DataTypes.STRING,
     },
   },

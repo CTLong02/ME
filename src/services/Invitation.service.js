@@ -5,7 +5,7 @@ const ElectricMeter = require("../models/ElectricMeter");
 const createInvitation = async ({
   electricMeterId,
   accountId,
-  role,
+  roleShare,
   roomname,
   homename,
 }) => {
@@ -13,7 +13,7 @@ const createInvitation = async ({
     const invitation = await Invitation.create({
       electricMeterId,
       accountId,
-      role,
+      roleShare,
       roomname,
       homename,
     });
@@ -78,9 +78,9 @@ const getListInvitationByEMId = async (electricMeterId) => {
       order: [["datetime", "ASC"]],
       attributes: [
         "datetime",
-        "role",
+        "roleShare",
         [Sequelize.col("account.accountId"), "accountId"],
-        [Sequelize.col("electricMeter.name"), "electricMeterName"],
+        [Sequelize.col("electricMeter.electricMetername"), "electricMetername"],
         [Sequelize.col("account.fullname"), "fullname"],
         [Sequelize.col("account.email"), "email"],
         [Sequelize.col("account.phonenumber"), "phonenumber"],

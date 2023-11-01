@@ -9,11 +9,11 @@ const { createHome, getHomesByAccountId } = require("../services/Home.service");
 const addHome = async (req, res) => {
   try {
     const { accountId } = req.account;
-    const { name } = req.body;
-    if (!name) {
+    const { homename } = req.body;
+    if (!homename) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
-    const home = await createHome({ accountId, name });
+    const home = await createHome({ accountId, homename });
     if (home) {
       const homes = (await getHomesByAccountId(accountId)).map((home) => {
         const { createdAt, updatedAt, accountId, ...data } = home;
@@ -29,10 +29,10 @@ const addHome = async (req, res) => {
 const getHomes = async (req, res) => {};
 const renameHome = async (req, res) => {
   try {
-    const { name, homeId } = req.body;
+    const { homename, homeId } = req.body;
     const { accountId } = req.account;
-    if (!name) {
-      responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    if (!homename) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     const home = await Home.findOne({
       where: { homeId, accountId },
@@ -40,7 +40,7 @@ const renameHome = async (req, res) => {
     if (!home) {
       return responseFailed(res, ResponseStatus.NOT_FOUND, "Nhà không tồn tại");
     }
-    home.name = name;
+    home.homename = homename;
     await home.save();
     const { createdAt, updatedAt, ...dataHome } = home.dataValues;
     return responseSuccess(res, ResponseStatus.SUCCESS, {

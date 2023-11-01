@@ -15,8 +15,8 @@ const createEMShareForAnAccount = async ({
   roleShare,
 }) => {
   try {
-    const home = await createHome({ name: homename, accountId });
-    const room = await createRoom({ name: roomname, homeId: home.homeId });
+    const home = await createHome({ homename, accountId });
+    const room = await createRoom({ roomname, homeId: home.homeId });
     const emShare = await ElectricMeterShare.create({
       accountId,
       electricMeterId,
@@ -37,8 +37,8 @@ const findAccountByEMShareId = async (electricMeterId, accountId) => {
         "electricMeterShareId",
         "roleShare",
         [Sequelize.col("room.home.account.accountId"), "accountId"],
-        [Sequelize.col("room.name"), "roomname"],
-        [Sequelize.col("room.home.name"), "homename"],
+        [Sequelize.col("room.roomname"), "roomname"],
+        [Sequelize.col("room.home.homename"), "homename"],
       ],
       include: [
         {
@@ -240,11 +240,11 @@ const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
         "electricMeterId",
         ["roleShare", "role"],
         [Sequelize.col("electricMeter.createdAt"), "acceptedAt"],
-        [Sequelize.col("electricMeter.name"), "name"],
+        [Sequelize.col("electricMeter.electricMetername"), "electricMetername"],
         [Sequelize.col("room.roomId"), "roomId"],
-        [Sequelize.col("room.name"), "roomname"],
+        [Sequelize.col("room.roomname"), "roomname"],
         [Sequelize.col("room.home.homeId"), "homeId"],
-        [Sequelize.col("room.home.name"), "homename"],
+        [Sequelize.col("room.home.homename"), "homename"],
       ],
       include: [
         {

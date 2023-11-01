@@ -9,7 +9,7 @@ Home.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    name: {
+    homename: {
       type: DataTypes.STRING,
     },
   },

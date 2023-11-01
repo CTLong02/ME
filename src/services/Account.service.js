@@ -177,10 +177,10 @@ const getListInvitationByAccountId = async (accountId) => {
       attributes: [
         "invitationId",
         "datetime",
-        [Sequelize.col("role"), "roleShare"],
+        "roleShare",
         [Sequelize.col("electricMeter.electricMeterId"), "electricMeterId"],
         [Sequelize.col("account.accountId"), "accountId"],
-        [Sequelize.col("electricMeter.name"), "electricMeterName"],
+        [Sequelize.col("electricMeter.electricMetername"), "electricMetername"],
         [Sequelize.col("account.fullname"), "fullname"],
         [Sequelize.col("account.email"), "email"],
         [Sequelize.col("account.phonenumber"), "phonenumber"],

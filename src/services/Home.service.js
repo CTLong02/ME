@@ -1,8 +1,8 @@
 const Home = require("../models/Home");
 const Account = require("../models/Account");
-const createHome = async ({ accountId, name }) => {
+const createHome = async ({ accountId, homename }) => {
   try {
-    const home = await Home.create({ accountId, name });
+    const home = await Home.create({ accountId, homename });
     return home.dataValues;
   } catch (error) {
     return null;

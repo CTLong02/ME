@@ -55,7 +55,7 @@ ElectricMeter.init(
       type: DataTypes.TINYINT,
       allowNull: false,
     },
-    name: {
+    electricMetername: {
       type: DataTypes.STRING,
       allowNull: false,
       defaultValue: "Smart Electric Meter",

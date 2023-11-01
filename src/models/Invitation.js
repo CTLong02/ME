@@ -9,7 +9,7 @@ Invitation.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    role: {
+    roleShare: {
       type: DataTypes.ENUM,
       allowNull: false,
       values: [...Object.values(ROLE_EM)],

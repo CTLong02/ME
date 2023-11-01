@@ -57,8 +57,8 @@ const findAccountByEMId = async (electricMeterId) => {
       attributes: [
         "electricMeterId",
         [Sequelize.col("room.home.account.accountId"), "accountId"],
-        [Sequelize.col("room.name"), "roomname"],
-        [Sequelize.col("room.home.name"), "homename"],
+        [Sequelize.col("room.roomname"), "roomname"],
+        [Sequelize.col("room.home.homename"), "homename"],
       ],
       include: [
         {
@@ -89,12 +89,12 @@ const findEMsByAcountId = async ({ roomId, homeId, accountId }) => {
       order: [["createdAt", "ASC"]],
       attributes: [
         "electricMeterId",
-        "name",
+        "electricMetername",
         [Sequelize.literal("'owner'"), "role"],
         [Sequelize.col("room.roomId"), "roomId"],
-        [Sequelize.col("room.name"), "roomname"],
+        [Sequelize.col("room.roomname"), "roomname"],
         [Sequelize.col("room.home.homeId"), "homeId"],
-        [Sequelize.col("room.home.name"), "homename"],
+        [Sequelize.col("room.home.homename"), "homename"],
       ],
       include: {
         model: Room,
@@ -136,7 +136,7 @@ const updateEm = async ({
   ssid,
   pass,
   rtc,
-  name,
+  electricMetername,
   macAddress,
 }) => {
   try {
@@ -150,7 +150,9 @@ const updateEm = async ({
     em.ssid = ssid ? ssid : em.ssid;
     em.pass = pass ? pass : em.pass;
     em.rtc = rtc ? rtc : em.rtc;
-    em.name = name ? name : em.name;
+    em.electricMetername = electricMetername
+      ? electricMetername
+      : em.electricMetername;
     em.macAddress = macAddress ? macAddress : em.macAddress;
     await em.save();
     return em.dataValues;

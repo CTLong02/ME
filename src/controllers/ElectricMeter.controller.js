@@ -48,7 +48,7 @@ const {
 const addEM = async (req, res) => {
   try {
     const {
-      electricMeterName,
+      electricMetername,
       roomId,
       homeId,
       electricMeterId,
@@ -105,14 +105,18 @@ const addEM = async (req, res) => {
     });
 
     if (roomId) {
-      const rooms = account.dataValues?.homes.reduce((home, curValue) => {
-        const { rooms } = home;
+      const iRoomId = Number.parseInt(roomId.toString());
+      const rooms = account.dataValues?.homes.reduce((acc, home) => {
+        const { rooms } = home.dataValues;
         const roomIds = rooms.map((room) => room.roomId);
-        return [...curValue, ...roomIds];
+        return [...acc, ...roomIds];
       }, []);
-      if (rooms && Array.isArray(rooms) && rooms.includes(roomId)) {
-        findedEM.roomId = roomId;
-        findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
+
+      if (rooms && Array.isArray(rooms) && rooms.includes(iRoomId)) {
+        findedEM.roomId = iRoomId;
+        findedEM.electricMetername = !!electricMetername
+          ? electricMetername
+          : findedEM.electricMetername;
         await findedEM.save();
         const newAccount = await joinAccount(req.account.accountId);
         return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -127,11 +131,12 @@ const addEM = async (req, res) => {
     }
 
     if (homeId) {
+      const iHomeId = Number.parseInt(homeId.toString());
       const homes = account.dataValues?.homes.map((e) => e.homeId);
       if (
         !homes ||
         !Array.isArray(homes) ||
-        !homes.includes(Number.parseInt(homeId))
+        !homes.includes(Number.parseInt(iHomeId))
       ) {
         return responseFailed(
           res,
@@ -140,18 +145,20 @@ const addEM = async (req, res) => {
         );
       }
       const homeById = await Home.findOne({
-        where: { homeId },
+        where: { homeId: iHomeId },
         include: [{ model: Room, as: "rooms" }],
       });
       const room = await createRoom({
-        name: !!roomname
+        roomname: !!roomname
           ? roomname
           : `Phòng ${homeById.dataValues.rooms.length + 1}`,
         homeId,
       });
 
       findedEM.roomId = room.roomId;
-      findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
+      findedEM.electricMetername = !!electricMetername
+        ? electricMetername
+        : findedEM.electricMetername;
       await findedEM.save();
       const newAccount = await joinAccount(req.account.accountId);
       return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -161,16 +168,18 @@ const addEM = async (req, res) => {
 
     const home = await createHome({
       accountId: req.account.accountId,
-      name: !!homename
+      homename: !!homename
         ? homename
         : `Nhà ${account.dataValues?.homes.length + 1}`,
     });
     const room = await createRoom({
-      name: !!roomname ? roomname : "Phòng 1",
+      roomname: !!roomname ? roomname : "Phòng 1",
       homeId: home.homeId,
     });
     findedEM.roomId = room.roomId;
-    findedEM.name = !!electricMeterName ? electricMeterName : findedEM.name;
+    findedEM.electricMetername = !!electricMetername
+      ? electricMetername
+      : findedEM.electricMetername;
     await findedEM.save();
     const newAccount = await joinAccount(req.account.accountId);
     return responseSuccess(res, ResponseStatus.SUCCESS, {
@@ -222,7 +231,7 @@ const shareEm = async (req, res) => {
       accountId,
       roomname,
       homename,
-      role: roleShare,
+      roleShare,
     });
 
     setTimeout(() => {
@@ -262,13 +271,13 @@ const acceptEmShare = async (req, res) => {
       return responseFailed(res, ResponseStatus.NOT_FOUND, "Hết hiệu lực");
     }
 
-    const { roomname, homename, role } = invitaton.dataValues;
+    const { roomname, homename, roleShare } = invitaton.dataValues;
     const emShare = await createEMShareForAnAccount({
       accountId,
       electricMeterId,
       roomname,
       homename,
-      roleShare: role,
+      roleShare,
     });
     if (emShare) {
       await deleteInvitation({ electricMeterId, accountId });
@@ -500,11 +509,14 @@ const viewReportByMonth = async (req, res) => {
 const renameEm = async (req, res) => {
   try {
     const em = req.em;
-    const { name } = req.body;
-    if (!name) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    const { electricMetername } = req.body;
+    if (!electricMetername) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
-    const newEm = await updateEm({ electricMeterId: em.electricMeterId, name });
+    const newEm = await updateEm({
+      electricMeterId: em.electricMeterId,
+      electricMetername,
+    });
     if (!newEm) {
       return responseFailed(
         res,
@@ -524,7 +536,7 @@ const renameEm = async (req, res) => {
 const moveToRoom = async (req, res) => {
   try {
     const { roomId } = req.body;
-    const { electricMeterId, role } = req.em;
+    const { electricMeterId, roleShare } = req.em;
     const { accountId } = req.account;
     if (!roomId) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
@@ -540,7 +552,7 @@ const moveToRoom = async (req, res) => {
     }
 
     const em =
-      role == EM_ROLES.owner
+      roleShare == EM_ROLES.owner
         ? await ElectricMeter.findOne({ where: { electricMeterId } })
         : await findAccountByEMShareId(electricMeterId, accountId);
     em.roomId = roomId;
@@ -564,16 +576,18 @@ const getAccountSharedList = async (req, res) => {
     let j = 0;
     while (i < lenSharedAccounts || j < lenInvitations) {
       if (i < lenSharedAccounts && j < lenInvitations) {
-        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
-        const { datetime, role, electricMeterName, ...invitationData } =
+        const { createdAt, ...sharedData } = sharedAccount[i];
+        const { datetime, electricMeterName, ...invitationData } =
           invitations[j];
         if (createdAt < datetime) {
+          const { roleShare } = sharedAccount[i];
           shareAccounts.push({ ...sharedData, roleShare, accepted: true });
           i++;
         } else {
+          const { roleShare } = invitations[j];
           shareAccounts.push({
             ...invitationData,
-            roleShare: role,
+            roleShare,
             accepted: false,
           });
           j++;
@@ -583,11 +597,11 @@ const getAccountSharedList = async (req, res) => {
         shareAccounts.push({ ...sharedData, roleShare, accepted: true });
         i++;
       } else {
-        const { datetime, role, electricMeterName, ...invitationData } =
+        const { datetime, roleShare, electricMeterName, ...invitationData } =
           invitations[j];
         shareAccounts.push({
           ...invitationData,
-          roleShare: role,
+          roleShare,
           accepted: false,
         });
         j++;

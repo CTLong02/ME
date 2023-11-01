@@ -8,10 +8,10 @@ const Home = require("../models/Home");
 const Account = require("../models/Account");
 const renameRoom = async (req, res) => {
   try {
-    const { name, roomId } = req.body;
+    const { roomname, roomId } = req.body;
     const { accountId } = req.account;
-    if (!name) {
-      responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    if (!roomname) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     const room = await Room.findOne({
       where: { roomId },
@@ -30,7 +30,7 @@ const renameRoom = async (req, res) => {
     if (!room) {
       return responseFailed(res, ResponseStatus.NOT_FOUND, "Nhà không tồn tại");
     }
-    room.name = name;
+    room.roomname = roomname;
     await room.save();
     const { home, createdAt, updatedAt, ...roomData } = room.dataValues;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
