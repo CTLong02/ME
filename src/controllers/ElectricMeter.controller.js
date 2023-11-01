@@ -30,18 +30,19 @@ const {
   findSharedEmsByAccountId,
   findAccountByEMShareId,
   createEMShareForAnAccount,
-  findShareAccountsByEMId,
+  deleteSharedAccounts,
 } = require("../services/ElectricMeterShare.service");
 const {
   createInvitation,
   findInvitationByEMIdAndAccoutId,
   deleteInvitation,
-  getListInvitationByEMId,
+  deleteInvitations,
 } = require("../services/Invitation.service");
 const {
   findEMsByAcountId,
   findEMById,
   updateEm,
+  getAccountSharedListByEMId,
 } = require("../services/ElectricMeter.service");
 
 // Thêm công tơ vào tài khoản
@@ -567,49 +568,41 @@ const moveToRoom = async (req, res) => {
 const getAccountSharedList = async (req, res) => {
   try {
     const { electricMeterId } = req.em;
-    const sharedAccount = await findShareAccountsByEMId(electricMeterId);
-    const invitations = await getListInvitationByEMId(electricMeterId);
-    const shareAccounts = [];
-    const lenSharedAccounts = sharedAccount.length;
-    const lenInvitations = invitations.length;
-    let i = 0;
-    let j = 0;
-    while (i < lenSharedAccounts || j < lenInvitations) {
-      if (i < lenSharedAccounts && j < lenInvitations) {
-        const { createdAt, ...sharedData } = sharedAccount[i];
-        const { datetime, electricMeterName, ...invitationData } =
-          invitations[j];
-        if (createdAt < datetime) {
-          const { roleShare } = sharedAccount[i];
-          shareAccounts.push({ ...sharedData, roleShare, accepted: true });
-          i++;
-        } else {
-          const { roleShare } = invitations[j];
-          shareAccounts.push({
-            ...invitationData,
-            roleShare,
-            accepted: false,
-          });
-          j++;
-        }
-      } else if (i < lenSharedAccounts) {
-        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
-        shareAccounts.push({ ...sharedData, roleShare, accepted: true });
-        i++;
-      } else {
-        const { datetime, roleShare, electricMeterName, ...invitationData } =
-          invitations[j];
-        shareAccounts.push({
-          ...invitationData,
-          roleShare,
-          accepted: false,
-        });
-        j++;
-      }
-    }
+    const shareAccounts = await getAccountSharedListByEMId(electricMeterId);
     return responseSuccess(res, ResponseStatus.SUCCESS, { shareAccounts });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Có lỗi xảy ra");
+  }
+};
+
+// Xóa tài khoản được chia sẻ
+const deleteShareAccounts = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    const { toSharedAccountIds, notSharedAccountIds } = req.body;
+    if (
+      (!toSharedAccountIds || !Array.isArray(toSharedAccountIds)) &&
+      (!notSharedAccountIds || !Array.isArray(notSharedAccountIds))
+    ) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    if (notSharedAccountIds) {
+      await deleteInvitations({
+        electricMeterId,
+        accountIds: notSharedAccountIds,
+      });
+    }
+
+    if (toSharedAccountIds) {
+      await deleteSharedAccounts({
+        electricMeterId,
+        accountIds: toSharedAccountIds,
+      });
+    }
+    const shareAccounts = await getAccountSharedListByEMId(electricMeterId);
+    return responseSuccess(res, ResponseStatus.SUCCESS, { shareAccounts });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
@@ -626,4 +619,5 @@ module.exports = {
   renameEm,
   moveToRoom,
   getAccountSharedList,
+  deleteShareAccounts,
 };

@@ -1,12 +1,12 @@
 const { createHome } = require("./Home.service");
 const { createRoom } = require("./Room.service");
-const { ROLE_EM } = require("../config/constant/constant_model");
 const ElectricMeter = require("../models/ElectricMeter");
-const ElectricMeterShare = require("../models/ElectricMeterShare");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
 const Account = require("../models/Account");
 const { Sequelize } = require("sequelize");
+const { findShareAccountsByEMId } = require("./ElectricMeterShare.service");
+const { getListInvitationByEMId } = require("./Invitation.service");
 const addEM = async ({
   ID,
   Ver,
@@ -161,10 +161,71 @@ const updateEm = async ({
   }
 };
 
+const getAccountSharedListByEMId = async (electricMeterId) => {
+  try {
+    const sharedAccount = await findShareAccountsByEMId(electricMeterId);
+    const invitations = await getListInvitationByEMId(electricMeterId);
+    const shareAccounts = [];
+    const lenSharedAccounts = sharedAccount.length;
+    const lenInvitations = invitations.length;
+    let i = 0;
+    let j = 0;
+    while (i < lenSharedAccounts || j < lenInvitations) {
+      if (i < lenSharedAccounts && j < lenInvitations) {
+        const { createdAt, ...sharedData } = sharedAccount[i];
+        const { datetime, electricMeterName, ...invitationData } =
+          invitations[j];
+        if (createdAt < datetime) {
+          const { roleShare } = sharedAccount[i];
+          shareAccounts.push({
+            ...sharedData,
+            roleShare,
+            accepted: true,
+            datetime: createdAt,
+          });
+          i++;
+        } else {
+          const { roleShare } = invitations[j];
+          shareAccounts.push({
+            ...invitationData,
+            roleShare,
+            accepted: false,
+            datetime,
+          });
+          j++;
+        }
+      } else if (i < lenSharedAccounts) {
+        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
+        shareAccounts.push({
+          ...sharedData,
+          roleShare,
+          accepted: true,
+          datetime: createdAt,
+        });
+        i++;
+      } else {
+        const { datetime, roleShare, electricMeterName, ...invitationData } =
+          invitations[j];
+        shareAccounts.push({
+          ...invitationData,
+          roleShare,
+          accepted: false,
+          datetime,
+        });
+        j++;
+      }
+    }
+    return shareAccounts;
+  } catch (error) {
+    return [];
+  }
+};
+
 module.exports = {
   addEM,
   findEMById,
   findAccountByEMId,
   findEMsByAcountId,
   updateEm,
+  getAccountSharedListByEMId,
 };

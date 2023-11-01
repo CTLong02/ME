@@ -3,7 +3,7 @@ const ElectricMeter = require("../models/ElectricMeter");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
 const Account = require("../models/Account");
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
 const { createRoom } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
 const { ROLE_EM } = require("../config/constant/constant_model");
@@ -283,6 +283,19 @@ const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
   }
 };
 
+const deleteSharedAccounts = async ({ electricMeterId, accountIds }) => {
+  try {
+    let num = 0;
+    accountIds.forEach(async (accountId) => {
+      await deleteEMShare({ electricMeterId, accountId });
+      num++;
+    });
+    return num;
+  } catch (error) {
+    return null;
+  }
+};
+
 module.exports = {
   createEMShareForAnAccount,
   findAccountByEMShareId,
@@ -291,4 +304,5 @@ module.exports = {
   deleteEMShare,
   updateEMShare,
   findSharedEmsByAccountId,
+  deleteSharedAccounts,
 };

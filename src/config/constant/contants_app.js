@@ -41,4 +41,5 @@ API_WITH_EM_ROLE[URL_EM.moveToRoom] = [
   EM_ROLES.owner,
 ];
 API_WITH_EM_ROLE[URL_EM.sharedList] = [EM_ROLES.owner];
+API_WITH_EM_ROLE[URL_EM.deleteShareAccount] = [EM_ROLES.owner];
 module.exports = { API_WITH_EM_ROLE, RESPONSE_RESULT, EM_ROLES };

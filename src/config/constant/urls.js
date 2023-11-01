@@ -13,6 +13,7 @@ module.exports.URL_EM = {
   addTimer: "/add-timer",
   moveToRoom: "/move",
   sharedList: "/share-list",
+  deleteShareAccount: "/delete-share-account",
 };
 
 module.exports.URL_ACCOUNT = {

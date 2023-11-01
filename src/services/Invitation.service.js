@@ -1,4 +1,4 @@
-const { Sequelize } = require("sequelize");
+const { Sequelize, Op } = require("sequelize");
 const Invitation = require("../models/Invitation");
 const Account = require("../models/Account");
 const ElectricMeter = require("../models/ElectricMeter");
@@ -101,6 +101,26 @@ const getListInvitationByEMId = async (electricMeterId) => {
   }
 };
 
+const deleteInvitations = async ({ electricMeterId, accountIds }) => {
+  try {
+    const num = await Invitation.destroy({
+      where: {
+        electricMeterId,
+        accountId: {
+          [Op.or]: [
+            ...accountIds.map((id) => {
+              return { [Op.eq]: id };
+            }),
+          ],
+        },
+      },
+    });
+    return num;
+  } catch (error) {
+    return null;
+  }
+};
+
 module.exports = {
   createInvitation,
   findInvitationByEMIdAndAccoutId,
@@ -108,4 +128,5 @@ module.exports = {
   findInvitationsByAccountId,
   deleteInvitation,
   getListInvitationByEMId,
+  deleteInvitations,
 };
