@@ -1,11 +1,9 @@
 const {
-  createAccountByEmailService,
-  createAccountByPhoneNumberService,
-  findAccountByEmailService,
-  findAccountByPhoneNumberService,
-  findAccountByEmailAndPass,
+  createAccount,
+  findAccount,
   joinAccount,
   getListInvitationByAccountId,
+  getAllInfor,
 } = require("../services/Account.service");
 const {
   responseFailed,
@@ -18,55 +16,34 @@ const {
   deleteAccessToken,
 } = require("../services/Token.service");
 const { TIME_TOKEN } = require("../config/constant/constant_time");
-const {
-  findInvitationsByAccountId,
-} = require("../services/Invitation.service");
+const { hashPw, comparePw } = require("../utils/helper/AccountHelper");
 
 //Tạo tài khoản
 const signUp = async (req, res) => {
   try {
     const { email, password, phoneNumber } = req.body;
-    if (
-      (!email && !password && !phoneNumber) ||
-      ((!email || !password) && phoneNumber)
-    ) {
+    if (!(email && password) && !phoneNumber) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
-    if (phoneNumber) {
-      const findedAccount = await findAccountByPhoneNumberService(phoneNumber);
-      if (findedAccount) {
-        return responseFailed(
-          res,
-          ResponseStatus.BAD_REQUEST,
-          "Tài khoản với số điện thoại này đã tồn tại"
-        );
-      }
-      const createdAccount = await createAccountByPhoneNumberService(
-        phoneNumber
+    const account = await findAccount({ email, phoneNumber });
+    if (account) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Tài khoản đã tồn tại"
       );
-      if (createdAccount) {
-        return responseSuccess(res, ResponseStatus.SUCCESS, {
-          account: createdAccount,
-        });
-      }
-    } else {
-      const findedAccount = await findAccountByEmailService(email);
-      if (findedAccount) {
-        return responseFailed(
-          res,
-          ResponseStatus.BAD_REQUEST,
-          "Tài khoản với email này đã tồn tại"
-        );
-      }
-      const createdAccount = await createAccountByEmailService(email, password);
-      if (createdAccount) {
-        return responseSuccess(res, ResponseStatus.SUCCESS, {
-          account: createdAccount,
-        });
-      }
     }
+    const pass = password ? hashPw(password) : null;
+    const createdAccount = await createAccount({ phoneNumber, pass, email });
+    const accountData = createdAccount.dataValues;
+    const { accountId } = accountData;
+    const token = createToken(accountData);
+    await createAccessToken({ accountId, token });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      account: { ...accountData, homes: [], accessToken: token },
+    });
   } catch (error) {
-    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
@@ -74,53 +51,31 @@ const signUp = async (req, res) => {
 const signIn = async (req, res) => {
   const { email, password, phoneNumber } = req.body;
   try {
-    if (
-      (!email && !password && !phoneNumber) ||
-      ((!email || !password) && phoneNumber)
-    ) {
+    if (!(email && password) && !phoneNumber) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
-    if (phoneNumber) {
-      const findedAccountByPhone = await findAccountByPhoneNumberService(
-        phoneNumber
+    const account = await getAllInfor({ email, phoneNumber });
+    if (!account) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Tài khoản không tồn tại"
       );
-      if (!findedAccountByPhone) {
-        return responseFailed(
-          res,
-          ResponseStatus.BAD_REQUEST,
-          "Tài khoản với số điện thoại này không tồn tại"
-        );
-      }
-    } else {
-      const findedAccountByEmail = await findAccountByEmailService(email);
-      if (!findedAccountByEmail) {
-        return responseFailed(
-          res,
-          ResponseStatus.BAD_REQUEST,
-          "Tài khoản với email này không tồn tại"
-        );
-      }
-      const findedAccountByEmailAndPass = await findAccountByEmailAndPass(
-        email,
-        password
-      );
-      if (!findedAccountByEmailAndPass) {
-        return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai mật khẩu");
-      }
-      const join = await joinAccount(findedAccountByEmailAndPass.accountId);
-      const accessToken = createToken(findedAccountByEmailAndPass);
-      await deleteAccessToken(findedAccountByEmailAndPass.accountId);
-      const token = await createAccessToken({
-        accountId: findedAccountByEmailAndPass.accountId,
-        token: accessToken,
-      });
-      setTimeout(() => {
-        deleteAccessToken(findedAccountByEmailAndPass.accountId);
-      }, TIME_TOKEN);
-      return responseSuccess(res, ResponseStatus.SUCCESS, {
-        account: { ...join, accessToken },
-      });
     }
+    const { homes, ...accountData } = account;
+    if (email) {
+      const isCorrectPassword = comparePw(password, accountData.pass);
+      if (!isCorrectPassword) {
+        return responseFailed(res, ResponseStatus.UNAUTHORIZED, "Sai mật khẩu");
+      }
+    }
+    const { accountId } = accountData;
+    const token = createToken(accountData);
+    await deleteAccessToken(accountId);
+    await createAccessToken({ accountId, token });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      account: { ...account, accessToken: token },
+    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }

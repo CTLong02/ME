@@ -20,6 +20,7 @@ const {
   moveToRoom,
   getAccountSharedList,
   deleteShareAccounts,
+  getAllNewscast,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -88,5 +89,11 @@ ElectricMeterRouter.delete(
   URL_EM.deleteShareAccount,
   [authMiddleware, permisionEmMiddleware],
   deleteShareAccounts
+);
+
+ElectricMeterRouter.get(
+  URL_EM.getAllNewscast,
+  [authMiddleware, permisionEmMiddleware],
+  getAllNewscast
 );
 module.exports = ElectricMeterRouter;

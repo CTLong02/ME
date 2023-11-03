@@ -14,6 +14,7 @@ module.exports.URL_EM = {
   moveToRoom: "/move",
   sharedList: "/share-list",
   deleteShareAccount: "/delete-share-account",
+  getAllNewscast: "/all-newscast",
 };
 
 module.exports.URL_ACCOUNT = {

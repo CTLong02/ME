@@ -1,4 +1,4 @@
-const { DataTypes, Model } = require("sequelize");
+const { DataTypes, Model, Op } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const Invitation = require("./Invitation");
 const Home = require("./Home");
@@ -48,6 +48,10 @@ Account.init(
   {
     modelName: "Account",
     sequelize,
+    indexes: [
+      { fields: ["email"], unique: true },
+      { fields: ["phoneNumber"], unique: true },
+    ],
   }
 );
 

@@ -286,10 +286,14 @@ const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
 const deleteSharedAccounts = async ({ electricMeterId, accountIds }) => {
   try {
     let num = 0;
-    accountIds.forEach(async (accountId) => {
+    // accountIds.forEach(async (accountId) => {
+    //   await deleteEMShare({ electricMeterId, accountId });
+    //   num++;
+    // });
+    for (let i = 0; i < accountIds.length; i++) {
+      const accountId = accountIds[i];
       await deleteEMShare({ electricMeterId, accountId });
-      num++;
-    });
+    }
     return num;
   } catch (error) {
     return null;

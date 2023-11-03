@@ -3,6 +3,7 @@ const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
+const Newscast = require("../models/Newscast");
 const { getDaysInMonth } = require("date-fns");
 const {
   createRoom,
@@ -606,6 +607,18 @@ const deleteShareAccounts = async (req, res) => {
   }
 };
 
+const getAllNewscast = async (req, res) => {
+  try {
+    const { electricMeterId } = req.query;
+    const newscasts = await Newscast.findAll({ where: { electricMeterId } });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      newscasts: newscasts.map((newscast) => newscast.dataValues),
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -620,4 +633,5 @@ module.exports = {
   moveToRoom,
   getAccountSharedList,
   deleteShareAccounts,
+  getAllNewscast,
 };
