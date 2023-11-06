@@ -39,6 +39,7 @@ const signUp = async (req, res) => {
     const { accountId } = accountData;
     const token = createToken(accountData);
     await createAccessToken({ accountId, token });
+    delete accountData.pass;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       account: { ...accountData, homes: [], accessToken: token },
     });
@@ -73,6 +74,7 @@ const signIn = async (req, res) => {
     const token = createToken(accountData);
     await deleteAccessToken(accountId);
     await createAccessToken({ accountId, token });
+    delete account.pass;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       account: { ...account, accessToken: token },
     });

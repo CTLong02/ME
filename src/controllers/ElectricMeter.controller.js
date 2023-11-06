@@ -587,14 +587,14 @@ const deleteShareAccounts = async (req, res) => {
     ) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
-    if (notSharedAccountIds) {
+    if (notSharedAccountIds.length > 0) {
       await deleteInvitations({
         electricMeterId,
         accountIds: notSharedAccountIds,
       });
     }
 
-    if (toSharedAccountIds) {
+    if (toSharedAccountIds.length > 0) {
       await deleteSharedAccounts({
         electricMeterId,
         accountIds: toSharedAccountIds,

@@ -1,21 +1,14 @@
-const {
-  responseFailed,
-  responseSuccess,
-} = require("../utils/helper/RESTHelper");
+const { responseFailed } = require("../utils/helper/RESTHelper");
 const ResposeStatus = require("../config/constant/response_status");
-const {
-  findAccountByEmailService,
-  findAccountByPhoneNumberService,
-} = require("../services/Account.service");
+const { findAccount } = require("../services/Account.service");
 const exitsAccountMiddleware = async (req, res, next) => {
-  const { email, phonenumber } = req.body;
-  if (!email && !phonenumber) {
+  const { email, phoneNumber } = req.body;
+  if (!email && !phoneNumber) {
     return responseFailed(res, ResposeStatus.BAD_REQUEST, "Thiếu tham số");
   }
 
-  const accountByEmail = await findAccountByEmailService(email);
-  const accountByPhone = await findAccountByPhoneNumberService(phonenumber);
-  if (!accountByEmail && !accountByPhone) {
+  const account = await findAccount({ email, phoneNumber });
+  if (!account) {
     return responseFailed(
       res,
       ResposeStatus.NOT_FOUND,
@@ -23,19 +16,7 @@ const exitsAccountMiddleware = async (req, res, next) => {
     );
   }
 
-  if (
-    !!accountByEmail &&
-    !!accountByPhone &&
-    accountByEmail !== accountByPhone
-  ) {
-    return responseFailed(
-      res,
-      ResposeStatus.NOT_FOUND,
-      `Email và số điện thoại không trùng khớp`
-    );
-  }
-
-  const recipientAccount = !!accountByEmail ? accountByEmail : accountByPhone;
+  const recipientAccount = account.dataValues;
   if (recipientAccount.accountId === req.account.accountId) {
     return responseFailed(
       res,
