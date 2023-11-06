@@ -35,13 +35,12 @@ const onMessage = async (topic, payload) => {
         !lastEnergyChange ||
         lastNewscast.createdAt > lastEnergyChange.createdAt
       ) {
-        distance = lastNewscast.energy - newEnergyValue;
+        distance = newEnergyValue - lastNewscast.energy;
       } else {
-        distance =
-          lastNewscast.energy - lastEnergyChange.volume - newEnergyValue;
+        distance = newEnergyValue - lastEnergyChange.value;
       }
       const volume = Number.parseFloat(distance.toFixed(2));
-      createEnergyChange({ electricMeterId, volume });
+      createEnergyChange({ electricMeterId, value: newEnergyValue, volume });
       break;
     case RESPONSE_COMAND.INFOR_EM:
       addEM(data);

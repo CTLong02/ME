@@ -8,6 +8,10 @@ EnergyChange.init(
       primaryKey: true,
       autoIncrement: true,
     },
+    value: {
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+    },
     volume: {
       type: DataTypes.DOUBLE,
       allowNull: false,
