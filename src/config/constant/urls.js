@@ -15,6 +15,7 @@ module.exports.URL_EM = {
   sharedList: "/share-list",
   deleteShareAccount: "/delete-share-account",
   getAllNewscast: "/all-newscast",
+  changeEnergyValue: "/change-energy",
 };
 
 module.exports.URL_ACCOUNT = {

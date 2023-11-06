@@ -21,6 +21,7 @@ const {
   getAccountSharedList,
   deleteShareAccounts,
   getAllNewscast,
+  changeEnergyValue,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -96,4 +97,11 @@ ElectricMeterRouter.get(
   [authMiddleware, permisionEmMiddleware],
   getAllNewscast
 );
+
+ElectricMeterRouter.put(
+  URL_EM.changeEnergyValue,
+  [authMiddleware, permisionEmMiddleware],
+  changeEnergyValue
+);
+
 module.exports = ElectricMeterRouter;

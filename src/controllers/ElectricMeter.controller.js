@@ -6,6 +6,17 @@ const ElectricMeter = require("../models/ElectricMeter");
 const Newscast = require("../models/Newscast");
 const { getDaysInMonth } = require("date-fns");
 const {
+  responseFailed,
+  responseSuccess,
+} = require("../utils/helper/RESTHelper");
+const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
+const TIME = require("../config/constant/constant_time");
+const ResponseStatus = require("../config/constant/response_status");
+const { ROLE_EM } = require("../config/constant/constant_model");
+const { EM_ROLES } = require("../config/constant/contants_app");
+const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
+const { REQUEST_COMAND } = require("../config/constant/command");
+const {
   createRoom,
   checkRoomBelongAccount,
 } = require("../services/Room.service");
@@ -16,16 +27,7 @@ const {
   getOnHour,
 } = require("../services/Newscast.service");
 const { joinAccount } = require("../services/Account.service");
-const {
-  responseFailed,
-  responseSuccess,
-} = require("../utils/helper/RESTHelper");
-const TIME = require("../config/constant/constant_time");
-const ResponseStatus = require("../config/constant/response_status");
-const { ROLE_EM } = require("../config/constant/constant_model");
-const { EM_ROLES } = require("../config/constant/contants_app");
-const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
-const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
+const { publish } = require("../services/mqtt.service");
 const moment = require("moment");
 const {
   findSharedEmsByAccountId,
@@ -619,6 +621,26 @@ const getAllNewscast = async (req, res) => {
   }
 };
 
+// Thay đổi chỉ số  công tơ
+const changeEnergyValue = async (req, res) => {
+  try {
+    const { value } = req.body;
+    const { electricMeterId } = req.em;
+    if (!value) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const fValue = Number.parseFloat(value.toString());
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.CHANGE_EM,
+      data: { value: fValue },
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -634,4 +656,5 @@ module.exports = {
   getAccountSharedList,
   deleteShareAccounts,
   getAllNewscast,
+  changeEnergyValue,
 };

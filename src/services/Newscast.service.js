@@ -51,8 +51,8 @@ const getLastNewscast = async (electricMeterId) => {
   try {
     const newscasts = await Newscast.findAll({
       where: { electricMeterId },
-      order: [["datetime", "DESC"]],
-      attributes: { exclude: ["updatedAt", "createdAt", "id"] },
+      order: [["createdAt", "DESC"]],
+      attributes: { exclude: ["updatedAt", "id"] },
     });
     return newscasts.length > 0 ? newscasts[0].dataValues : null;
   } catch (error) {

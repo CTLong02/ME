@@ -6,6 +6,7 @@ const Newscast = require("./Newscast");
 const Timer = require("./Timer");
 const ChangeTemperature = require("./ChangeTemperature");
 const Invitation = require("./Invitation");
+const EnergyChange = require("./EnergyChange");
 const { TYPE_CONNECT } = require("../config/constant/constant_model");
 class ElectricMeter extends Model {}
 ElectricMeter.init(
@@ -118,6 +119,15 @@ ElectricMeter.hasMany(Invitation, {
   as: "invitations",
 });
 Invitation.belongsTo(ElectricMeter, {
+  as: "electricMeter",
+  foreignKey: { name: "electricMeterId" },
+});
+
+ElectricMeter.hasMany(EnergyChange, {
+  as: "energyChanges",
+  foreignKey: { name: "electricMeterId" },
+});
+EnergyChange.belongsTo(ElectricMeter, {
   as: "electricMeter",
   foreignKey: { name: "electricMeterId" },
 });

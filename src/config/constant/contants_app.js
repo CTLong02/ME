@@ -47,4 +47,5 @@ API_WITH_EM_ROLE[URL_EM.getAllNewscast] = [
   EM_ROLES.enable_control,
   EM_ROLES.owner,
 ];
+API_WITH_EM_ROLE[URL_EM.changeEnergyValue] = [EM_ROLES.owner];
 module.exports = { API_WITH_EM_ROLE, RESPONSE_RESULT, EM_ROLES };

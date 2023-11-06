@@ -13,7 +13,7 @@ const route = require("./routes");
 route(app);
 
 //connect db
-const { conectDB, createTable } = require("./config/database/connect");
+const { createTable } = require("./config/database/connect");
 createTable();
 
 //mqtt
