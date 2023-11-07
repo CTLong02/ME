@@ -18,6 +18,7 @@ ElectricMeterShare.init(
     acceptedAt: {
       type: DataTypes.DATE,
       allowNull: false,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

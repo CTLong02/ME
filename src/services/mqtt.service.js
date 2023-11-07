@@ -68,7 +68,7 @@ const onMessage = async (topic, payload) => {
           Rtc: 1,
         });
       }
-      const datetime = new Date(Date.now());
+      const datetime = new Date();
       const energy = await findEnergy({
         electricMeterId,
         hour: datetime.getHours(),
@@ -89,10 +89,7 @@ const onMessage = async (topic, payload) => {
       if (em) {
         if (
           !lastEnergyChange ||
-          differenceInMilliseconds(
-            lastEnergyChange.datetime,
-            new Date(Date.now())
-          ) >
+          differenceInMilliseconds(lastEnergyChange.datetime, new Date()) >
             60 * 1000
         ) {
           createEnergyChange({

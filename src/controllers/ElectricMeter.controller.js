@@ -536,7 +536,7 @@ const createData = async (req, res) => {
     for (let i = 1; i <= 1440; i++) {
       const random = Number.parseFloat(Math.random().toFixed(2));
       sum = Number.parseFloat((sum + random).toFixed(2));
-      const datetime = new Date(2022, 3, 1, 0, i);
+      const datetime = new Date(2022, 4, 1, 0, i);
       const hour = datetime.getHours();
       const day = datetime.getDate();
       const month = datetime.getMonth();
@@ -555,7 +555,7 @@ const createData = async (req, res) => {
         const newEnergy = await Energy.create({
           electricMeterId,
           hour,
-          datetime,
+          date: datetime,
           firstValue: sum,
           lastValue: sum,
         });

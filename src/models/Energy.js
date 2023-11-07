@@ -22,6 +22,7 @@ Energy.init(
     },
     date: {
       type: DataTypes.DATEONLY,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

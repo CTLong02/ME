@@ -3,14 +3,14 @@ const { Op } = require("sequelize");
 
 const createEnergy = async ({ electricMeterId, firstValue }) => {
   try {
-    const datetime = new Date();
-    const hour = datetime.getHours();
+    const date = new Date();
+    const hour = date.getHours();
     const energy = await Energy.create({
       electricMeterId,
       firstValue,
       lastValue: firstValue,
       hour,
-      datetime,
+      date,
     });
     return !!energy ? energy : null;
   } catch (error) {
@@ -20,9 +20,9 @@ const createEnergy = async ({ electricMeterId, firstValue }) => {
 
 const findEnergy = async ({ electricMeterId, hour, day, month, year }) => {
   try {
-    const datetime = new Date(year, month, day);
+    const date = new Date(year, month, day);
     const energy = await Energy.findOne({
-      where: { electricMeterId, hour, datetime },
+      where: { electricMeterId, hour, date },
     });
     return !!energy ? energy : null;
   } catch (error) {

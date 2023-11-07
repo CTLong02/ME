@@ -18,6 +18,7 @@ EnergyChange.init(
     },
     datetime: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   },
   {

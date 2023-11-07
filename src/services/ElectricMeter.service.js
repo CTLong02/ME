@@ -31,6 +31,7 @@ const addEM = async ({
       ssid: Ssid,
       pass: Pass,
       rtc: Rtc,
+      updateAt: new Date(),
     });
     return electricMeter.dataValues;
   } catch (error) {
@@ -175,6 +176,7 @@ const updateEm = async ({
       ? electricMetername
       : em.electricMetername;
     em.macAddress = macAddress ? macAddress : em.macAddress;
+    em.updateAt = new Date();
     await em.save();
     return em.dataValues;
   } catch (error) {
@@ -193,16 +195,16 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
     let j = 0;
     while (i < lenSharedAccounts || j < lenInvitations) {
       if (i < lenSharedAccounts && j < lenInvitations) {
-        const { accepted, ...sharedData } = sharedAccount[i];
+        const { acceptedAt, ...sharedData } = sharedAccount[i];
         const { datetime, electricMeterName, ...invitationData } =
           invitations[j];
-        if (accepted < datetime) {
+        if (acceptedAt < datetime) {
           const { roleShare } = sharedAccount[i];
           shareAccounts.push({
             ...sharedData,
             roleShare,
             accepted: true,
-            datetime: accepted,
+            datetime: acceptedAt,
           });
           i++;
         } else {
@@ -216,12 +218,12 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
           j++;
         }
       } else if (i < lenSharedAccounts) {
-        const { accepted, roleShare, ...sharedData } = sharedAccount[i];
+        const { acceptedAt, roleShare, ...sharedData } = sharedAccount[i];
         shareAccounts.push({
           ...sharedData,
           roleShare,
           accepted: true,
-          datetime: accepted,
+          datetime: acceptedAt,
         });
         i++;
       } else {
