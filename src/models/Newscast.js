@@ -65,12 +65,12 @@ Newscast.init(
     },
     datetime: {
       type: DataTypes.DATE,
-      defaultValue: new Date(Date.now()),
     },
   },
   {
     modelName: "Newscast",
     sequelize,
+    indexes: [{ fields: ["electricMeterId", "datetime"], unique: true }],
   }
 );
 

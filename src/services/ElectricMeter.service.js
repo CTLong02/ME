@@ -38,6 +38,15 @@ const addEM = async ({
   }
 };
 
+const findEM = async (electricMeterId) => {
+  try {
+    const em = await ElectricMeter.findOne({ where: { electricMeterId } });
+    return !!em ? em : null;
+  } catch (error) {
+    return null;
+  }
+};
+
 const findEMById = async (electricMeterId) => {
   try {
     const electricMeter = await ElectricMeter.findOne({
@@ -223,6 +232,7 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
 
 module.exports = {
   addEM,
+  findEM,
   findEMById,
   findAccountByEMId,
   findEMsByAcountId,

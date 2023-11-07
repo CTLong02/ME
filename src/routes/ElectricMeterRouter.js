@@ -22,6 +22,7 @@ const {
   deleteShareAccounts,
   getAllNewscast,
   changeEnergyValue,
+  createData,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
 ElectricMeterRouter.post(URL_EM.addEm, authMiddleware, addEM);
@@ -103,5 +104,7 @@ ElectricMeterRouter.put(
   [authMiddleware, permisionEmMiddleware],
   changeEnergyValue
 );
+
+ElectricMeterRouter.post(URL_EM.createData, [authMiddleware], createData);
 
 module.exports = ElectricMeterRouter;

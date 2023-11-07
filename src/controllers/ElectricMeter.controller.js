@@ -22,6 +22,7 @@ const {
 } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
 const {
+  insertNewscast,
   getLastNewscast,
   getOnDay,
   getOnHour,
@@ -393,11 +394,11 @@ const viewDetailEm = async (req, res) => {
         update: UPDATE_FIRMWARE.not_update,
         datetime: moment().format("LTS"),
       };
-      responseSuccess(res, ResponseStatus.SUCCESS, {
+      return responseSuccess(res, ResponseStatus.SUCCESS, {
         electricMeter: { ...emptyNewscast, ...emInfor },
       });
     }
-    responseSuccess(res, ResponseStatus.SUCCESS, {
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
       electricMeter: {
         ...lastNewscast,
         update: handleUpdateFirmware(lastNewscast.update),
@@ -405,7 +406,7 @@ const viewDetailEm = async (req, res) => {
       },
     });
   } catch (error) {
-    responseFailed(res, ResponseStatus.BAD_GATEWAY, "Lỗi server");
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Lỗi server");
   }
 };
 
@@ -641,6 +642,41 @@ const changeEnergyValue = async (req, res) => {
   }
 };
 
+const createData = async (req, res) => {
+  try {
+    const electricMeterId = "SMR-64B708A0E22C";
+    let sum = 10;
+    const minute = new Date(Date.now()).getMinutes();
+    for (let k = 0; k <= 200; k++) {
+      const arr = [];
+      for (let i = 0; i <= 7000; i++) {
+        const date = new Date(2023, 10, 15, 26, minute - i);
+        const random = Number.parseFloat((Math.random() * 10).toFixed(2));
+        sum = Number.parseFloat((sum + random).toFixed(2));
+        const data = {
+          electricMeterId,
+          conn: "2",
+          signal: -50,
+          strength: 0,
+          voltage: 224.02,
+          current: 0.72,
+          power: 129.5,
+          energy: random,
+          temp: 35.6,
+          load: 1,
+          update: "0",
+          datetime: date,
+        };
+        arr.push(data);
+        await Newscast.bulkCreate(arr);
+      }
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
 module.exports = {
   addEM,
   shareEm,
@@ -657,4 +693,5 @@ module.exports = {
   deleteShareAccounts,
   getAllNewscast,
   changeEnergyValue,
+  createData,
 };

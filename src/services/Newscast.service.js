@@ -43,18 +43,22 @@ const insertNewscast = async (data) => {
       temp: Temp,
       load: Load,
       update: Update.toString(),
+      datetime: new Date(Date.now()),
     });
-  } catch (error) {}
+  } catch (error) {
+    return null;
+  }
 };
 
 const getLastNewscast = async (electricMeterId) => {
   try {
-    const newscasts = await Newscast.findAll({
+    const maxDate = await Newscast.max("datetime", {
       where: { electricMeterId },
-      order: [["createdAt", "DESC"]],
-      attributes: { exclude: ["updatedAt", "id"] },
     });
-    return newscasts.length > 0 ? newscasts[0].dataValues : null;
+    const newcast = await Newscast.findOne({
+      where: { electricMeterId, datetime: maxDate },
+    });
+    return newcast.dataValues;
   } catch (error) {
     return null;
   }
@@ -133,6 +137,18 @@ const getOnDay = async ({ electricMeterId, day, month, year }) => {
     return addedNewscasts.map((newscast) => newscast.dataValues);
   } catch (error) {
     return [];
+  }
+};
+
+const findNewscast = async ({ electricMeterId, hour, day, month, year }) => {
+  try {
+    const datetime = new Date(year, month - 1, day, hour);
+    const newcast = await Newscast.findOne({
+      where: { electricMeterId, datetime },
+    });
+    return newcast;
+  } catch (error) {
+    return null;
   }
 };
 
