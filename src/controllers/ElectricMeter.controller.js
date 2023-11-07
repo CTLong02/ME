@@ -3,8 +3,8 @@ const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
-const Newscast = require("../models/Newscast");
-const { getDaysInMonth } = require("date-fns");
+const Energy = require("../models/Energy");
+const { findEnergy, createEnergy } = require("../services/Energy.service");
 const {
   responseFailed,
   responseSuccess,
@@ -14,22 +14,14 @@ const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
-const { UPDATE_FIRMWARE } = require("../config/constant/constant_model");
 const { REQUEST_COMAND } = require("../config/constant/command");
 const {
   createRoom,
   checkRoomBelongAccount,
 } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
-const {
-  insertNewscast,
-  getLastNewscast,
-  getOnDay,
-  getOnHour,
-} = require("../services/Newscast.service");
 const { joinAccount } = require("../services/Account.service");
 const { publish } = require("../services/mqtt.service");
-const moment = require("moment");
 const {
   findSharedEmsByAccountId,
   findAccountByEMShareId,
@@ -382,28 +374,8 @@ const viewDetailEm = async (req, res) => {
   try {
     const em = req.em;
     const emInfor = await findEMById(em.electricMeterId);
-    const lastNewscast = await getLastNewscast(em.electricMeterId);
-    if (!lastNewscast) {
-      const emptyNewscast = {
-        current: 0,
-        voltage: 0,
-        power: 0,
-        energy: 0,
-        temp: 0,
-        load: 1,
-        update: UPDATE_FIRMWARE.not_update,
-        datetime: moment().format("LTS"),
-      };
-      return responseSuccess(res, ResponseStatus.SUCCESS, {
-        electricMeter: { ...emptyNewscast, ...emInfor },
-      });
-    }
     return responseSuccess(res, ResponseStatus.SUCCESS, {
-      electricMeter: {
-        ...lastNewscast,
-        update: handleUpdateFirmware(lastNewscast.update),
-        ...emInfor,
-      },
+      electricMeter: emInfor,
     });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Lỗi server");
@@ -413,48 +385,6 @@ const viewDetailEm = async (req, res) => {
 // Báo cáo công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
-    const { day, month, year } = req.query;
-    const em = req.em;
-    if (!day || !month || !year) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    const iDay = Number.parseInt(day);
-    const iMonth = Number.parseInt(month);
-    const iYear = Number.parseInt(year);
-    const statistics = [];
-    for (let i = 0; i <= 23; i++) {
-      const newcastsOnHour = await getOnHour({
-        electricMeterId: em.electricMeterId,
-        hour: i,
-        day: iDay,
-        month: iMonth,
-        year: iYear,
-      });
-      if (newcastsOnHour.length <= 1) {
-        statistics.push({ hour: i, energy: 0 });
-        continue;
-      }
-      let sum = 0;
-      for (let j = 1; j < newcastsOnHour.length; j++) {
-        if (newcastsOnHour[j].energy !== 0) {
-          sum += newcastsOnHour[j].energy - newcastsOnHour[j - 1].energy;
-        }
-      }
-      sum = Number.parseFloat(sum.toFixed(2));
-      statistics.push({ hour: i, energy: sum });
-    }
-    const averageOnday = Number.parseFloat(
-      (statistics.reduce((acc, cur) => acc + cur.energy, 0) / 24).toFixed(2)
-    );
-    const sortStatistics = [...statistics].sort((a, b) => a.energy - b.energy);
-    const maxOnDay = sortStatistics[sortStatistics.length - 1].energy;
-    const minOnDay = sortStatistics[0].energy;
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
-      statistics,
-      minOnDay,
-      averageOnday,
-      maxOnDay,
-    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
   }
@@ -463,48 +393,6 @@ const viewReportByDay = async (req, res) => {
 //Báo cáo công tơ theo tháng
 const viewReportByMonth = async (req, res) => {
   try {
-    const { month, year } = req.query;
-    const em = req.em;
-    if (!month || !year) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    const iMonth = Number.parseInt(month);
-    const iYear = Number.parseInt(year);
-    const date = new Date(iYear, iMonth - 1);
-    const days = getDaysInMonth(date);
-    const statistics = [];
-    for (let i = 1; i <= days; i++) {
-      const newcastsOnDay = await getOnDay({
-        electricMeterId: em.electricMeterId,
-        day: i,
-        month: iMonth,
-        year: iYear,
-      });
-      if (newcastsOnDay.length <= 1) {
-        statistics.push({ day: i, energy: 0 });
-        continue;
-      }
-      let sum = 0;
-      for (let j = 1; j < newcastsOnDay.length; j++) {
-        if (newcastsOnDay[j].energy !== 0) {
-          sum += newcastsOnDay[j].energy - newcastsOnDay[j - 1].energy;
-        }
-      }
-      sum = Number.parseFloat(sum.toFixed(2));
-      statistics.push({ day: i, energy: sum });
-    }
-    const averageOnMonth = Number.parseFloat(
-      (statistics.reduce((acc, cur) => acc + cur.energy, 0) / days).toFixed(2)
-    );
-    const sortStatistics = [...statistics].sort((a, b) => a.energy - b.energy);
-    const maxOnMonth = sortStatistics[sortStatistics.length - 1].energy;
-    const minOnMonth = sortStatistics[0].energy;
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
-      statistics,
-      minOnMonth,
-      averageOnMonth,
-      maxOnMonth,
-    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -612,11 +500,6 @@ const deleteShareAccounts = async (req, res) => {
 
 const getAllNewscast = async (req, res) => {
   try {
-    const { electricMeterId } = req.query;
-    const newscasts = await Newscast.findAll({ where: { electricMeterId } });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
-      newscasts: newscasts.map((newscast) => newscast.dataValues),
-    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -645,30 +528,33 @@ const changeEnergyValue = async (req, res) => {
 const createData = async (req, res) => {
   try {
     const electricMeterId = "SMR-64B708A0E22C";
-    let sum = 10;
-    const minute = new Date(Date.now()).getMinutes();
-    for (let k = 0; k <= 200; k++) {
-      const arr = [];
-      for (let i = 0; i <= 7000; i++) {
-        const date = new Date(2023, 10, 15, 26, minute - i);
-        const random = Number.parseFloat((Math.random() * 10).toFixed(2));
-        sum = Number.parseFloat((sum + random).toFixed(2));
-        const data = {
+    let sum = 0;
+    for (let i = 1; i <= 1440; i++) {
+      const random = Number.parseFloat(Math.random().toFixed(2));
+      sum = Number.parseFloat((sum + random).toFixed(2));
+      const datetime = new Date(2022, 3, 1, 0, i);
+      const hour = datetime.getHours();
+      const day = datetime.getDate();
+      const month = datetime.getMonth();
+      const year = datetime.getFullYear();
+      const energy = await findEnergy({
+        electricMeterId,
+        hour,
+        day,
+        month,
+        year,
+      });
+      if (energy) {
+        energy.valueLast = sum;
+        await energy.save();
+      } else {
+        const newEnergy = await Energy.create({
           electricMeterId,
-          conn: "2",
-          signal: -50,
-          strength: 0,
-          voltage: 224.02,
-          current: 0.72,
-          power: 129.5,
-          energy: random,
-          temp: 35.6,
-          load: 1,
-          update: "0",
-          datetime: date,
-        };
-        arr.push(data);
-        await Newscast.bulkCreate(arr);
+          hour,
+          datetime,
+          firstValue: sum,
+          valueLast: sum,
+        });
       }
     }
     return responseSuccess(res, ResponseStatus.SUCCESS, {});

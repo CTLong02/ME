@@ -19,7 +19,7 @@ const handleUpdateFirmware = (update) => {
   }
 };
 
-const handleConnFirmware = (conn) => {
+const handleConn = (conn) => {
   switch (conn) {
     case TYPE_CONNECT_NUMBER._3G_4G:
       return TYPE_CONNECT._3G_4G;
@@ -32,4 +32,4 @@ const handleConnFirmware = (conn) => {
   }
 };
 
-module.exports = { handleUpdateFirmware, handleConnFirmware };
+module.exports = { handleUpdateFirmware, handleConn };

@@ -2,12 +2,15 @@ const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../config/database/connect");
 const ElectricMeterShare = require("./ElectricMeterShare");
 const Notification = require("./Notification");
-const Newscast = require("./Newscast");
+const Energy = require("./Energy");
 const Timer = require("./Timer");
 const ChangeTemperature = require("./ChangeTemperature");
 const Invitation = require("./Invitation");
 const EnergyChange = require("./EnergyChange");
-const { TYPE_CONNECT } = require("../config/constant/constant_model");
+const {
+  TYPE_CONNECT,
+  UPDATE_FIRMWARE,
+} = require("../config/constant/constant_model");
 class ElectricMeter extends Model {}
 ElectricMeter.init(
   {
@@ -42,13 +45,49 @@ ElectricMeter.init(
       allowNull: true,
       defaultValue: null,
     },
+    current: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    voltage: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    power: {
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    energy: {
+      type: DataTypes.DOUBLE,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    temp: {
+      type: DataTypes.FLOAT,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    load: {
+      type: DataTypes.TINYINT,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    updateState: {
+      type: DataTypes.ENUM,
+      allowNull: false,
+      values: [...Object.values(UPDATE_FIRMWARE)],
+      defaultValue: UPDATE_FIRMWARE.not_update,
+    },
     ssid: {
-      type: DataTypes.STRING,
+      type: DataTypes.CHAR,
       allowNull: true,
       defaultValue: null,
     },
     pass: {
-      type: DataTypes.STRING,
+      type: DataTypes.CHAR,
       allowNull: true,
       defaultValue: null,
     },
@@ -57,12 +96,12 @@ ElectricMeter.init(
       allowNull: false,
     },
     electricMetername: {
-      type: DataTypes.STRING,
+      type: DataTypes.CHAR,
       allowNull: false,
       defaultValue: "Smart Electric Meter",
     },
     macAddress: {
-      type: DataTypes.STRING,
+      type: DataTypes.CHAR,
       allowNull: false,
       defaultValue: "00-00-00-00-00-00",
     },
@@ -91,11 +130,11 @@ Notification.belongsTo(ElectricMeter, {
   foreignKey: { name: "electricMeterId" },
 });
 
-ElectricMeter.hasMany(Newscast, {
-  as: "newcasts",
+ElectricMeter.hasMany(Energy, {
+  as: "energys",
   foreignKey: { name: "electricMeterId" },
 });
-Newscast.belongsTo(ElectricMeter, {
+Energy.belongsTo(ElectricMeter, {
   as: "electricMeter",
   foreignKey: { name: "electricMeterId" },
 });

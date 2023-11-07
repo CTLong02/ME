@@ -8,11 +8,11 @@ EnergyChange.init(
       primaryKey: true,
       autoIncrement: true,
     },
-    value: {
+    preValue: {
       type: DataTypes.DOUBLE,
       allowNull: false,
     },
-    volume: {
+    curValue: {
       type: DataTypes.DOUBLE,
       allowNull: false,
     },

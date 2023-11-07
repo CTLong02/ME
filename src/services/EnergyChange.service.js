@@ -1,12 +1,13 @@
 const EnergyChange = require("../models/EnergyChange");
-const createEnergyChange = async ({ electricMeterId, value, volume }) => {
+
+const createEnergyChange = async ({ electricMeterId, preValue, valueCur }) => {
   try {
     const energyChange = await EnergyChange.create({
       electricMeterId,
-      value,
-      volume,
+      preValue,
+      valueCur,
     });
-    return energyChange;
+    return !!energyChange ? energyChange : null;
   } catch (error) {
     return null;
   }

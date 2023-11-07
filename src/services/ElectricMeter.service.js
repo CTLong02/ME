@@ -142,6 +142,13 @@ const updateEm = async ({
   conn,
   signal,
   strength,
+  current,
+  voltage,
+  power,
+  energy,
+  temp,
+  load,
+  updateState,
   ssid,
   pass,
   rtc,
@@ -156,6 +163,13 @@ const updateEm = async ({
     em.conn = conn ? conn : em.conn;
     em.signal = signal ? signal : em.signal;
     em.strength = strength ? strength : em.strength;
+    em.current = current ? current : em.current;
+    em.voltage = voltage ? voltage : em.voltage;
+    em.power = power ? power : em.power;
+    em.energy = energy ? energy : em.energy;
+    em.temp = temp ? temp : em.temp;
+    em.load = load ? load : em.load;
+    em.updateState = updateState ? updateState : em.updateState;
     em.ssid = ssid ? ssid : em.ssid;
     em.pass = pass ? pass : em.pass;
     em.rtc = rtc ? rtc : em.rtc;
