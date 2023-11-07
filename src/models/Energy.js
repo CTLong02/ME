@@ -28,7 +28,6 @@ Energy.init(
   {
     modelName: "Energy",
     sequelize,
-    timestamps: false,
     indexes: [
       { fields: ["electricMeterId", "date"] },
       { fields: ["electricMeterId", "date", "hour"], unique: true },

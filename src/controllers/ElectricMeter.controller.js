@@ -4,12 +4,10 @@ const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const Energy = require("../models/Energy");
-const { findEnergy, createEnergy } = require("../services/Energy.service");
 const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
-const { handleUpdateFirmware } = require("../utils/helper/AppHelper");
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
@@ -19,6 +17,8 @@ const {
   createRoom,
   checkRoomBelongAccount,
 } = require("../services/Room.service");
+const { findEnergy, findEnergysByday } = require("../services/Energy.service");
+const { getEnergyChangesByDate } = require("../services/EnergyChange.service");
 const { createHome } = require("../services/Home.service");
 const { publish } = require("../services/mqtt.service");
 const {
@@ -109,6 +109,7 @@ const addEM = async (req, res) => {
 
       if (rooms && Array.isArray(rooms) && rooms.includes(iRoomId)) {
         findedEM.roomId = iRoomId;
+        findedEM.acceptedAt = new Date();
         findedEM.electricMetername = !!electricMetername
           ? electricMetername
           : findedEM.electricMetername;
@@ -153,6 +154,7 @@ const addEM = async (req, res) => {
       });
 
       findedEM.roomId = room.roomId;
+      findedEM.acceptedAt = new Date();
       findedEM.electricMetername = !!electricMetername
         ? electricMetername
         : findedEM.electricMetername;
@@ -176,6 +178,7 @@ const addEM = async (req, res) => {
       homeId: home.homeId,
     });
     findedEM.roomId = room.roomId;
+    findedEM.acceptedAt = new Date();
     findedEM.electricMetername = !!electricMetername
       ? electricMetername
       : findedEM.electricMetername;
@@ -389,6 +392,41 @@ const viewDetailEm = async (req, res) => {
 // Báo cáo công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
+    const { date } = req.query;
+    const { electricMeterId } = req.em;
+    const datetime = new Date(date);
+    const energys = await findEnergysByday({ electricMeterId, date: datetime });
+    const energysByDay = [];
+    for (let i = 0; i < energys.length; i++) {
+      const energy = energys[i];
+      const {
+        firstValue,
+        lastValue,
+        hour,
+        date,
+        electricMeterId,
+        createdAt,
+        updatedAt,
+      } = energy.dataValues;
+      const fromDate = new Date(createdAt);
+      const toDate = new Date(updatedAt);
+      const energyChanges = await getEnergyChangesByDate({
+        electricMeterId,
+        fromDate,
+        toDate,
+      });
+      const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
+        const { preValue, curValue } = energyChange.dataValues;
+        return acc + curValue - preValue;
+      }, 0);
+      const value =
+        lastValue - firstValue - sumIncreasement > 0
+          ? lastValue - firstValue - sumIncreasement
+          : 0;
+      const energyByHour = Number.parseFloat(value.toFixed(2));
+      energysByDay.push({ energyByHour, hour });
+    }
+    return responseSuccess(res, ResponseStatus.SUCCESS, { energysByDay });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
   }
@@ -538,15 +576,9 @@ const createData = async (req, res) => {
       sum = Number.parseFloat((sum + random).toFixed(2));
       const datetime = new Date(2022, 4, 1, 0, i);
       const hour = datetime.getHours();
-      const day = datetime.getDate();
-      const month = datetime.getMonth();
-      const year = datetime.getFullYear();
       const energy = await findEnergy({
         electricMeterId,
-        hour,
-        day,
-        month,
-        year,
+        datetime,
       });
       if (energy) {
         energy.lastValue = sum;

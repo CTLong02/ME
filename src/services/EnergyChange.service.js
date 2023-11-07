@@ -1,4 +1,5 @@
 const EnergyChange = require("../models/EnergyChange");
+const { Op } = require("sequelize");
 
 const createEnergyChange = async ({ electricMeterId, preValue, curValue }) => {
   try {
@@ -17,7 +18,7 @@ const getLastEnergyChange = async (electricMeterId) => {
   try {
     const energyChanges = await EnergyChange.findAll({
       where: { electricMeterId },
-      order: [["acceptedAt", "DESC"]],
+      order: [["datetime", "DESC"]],
     });
     return energyChanges.length > 0 ? energyChanges[0].dataValues : null;
   } catch (error) {
@@ -25,4 +26,28 @@ const getLastEnergyChange = async (electricMeterId) => {
   }
 };
 
-module.exports = { createEnergyChange, getLastEnergyChange };
+const getEnergyChangesByDate = async ({
+  electricMeterId,
+  fromDate,
+  toDate,
+}) => {
+  try {
+    const energyChanges = await EnergyChange.findAll({
+      where: {
+        electricMeterId,
+        datetime: {
+          [Op.and]: [{ [Op.gte]: fromDate }, { [Op.lt]: toDate }],
+        },
+      },
+    });
+    return energyChanges;
+  } catch (error) {
+    return [];
+  }
+};
+
+module.exports = {
+  createEnergyChange,
+  getLastEnergyChange,
+  getEnergyChangesByDate,
+};

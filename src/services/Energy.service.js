@@ -18,9 +18,8 @@ const createEnergy = async ({ electricMeterId, firstValue }) => {
   }
 };
 
-const findEnergy = async ({ electricMeterId, hour, day, month, year }) => {
+const findEnergy = async ({ electricMeterId, hour, date }) => {
   try {
-    const date = new Date(year, month, day);
     const energy = await Energy.findOne({
       where: { electricMeterId, hour, date },
     });
@@ -30,4 +29,15 @@ const findEnergy = async ({ electricMeterId, hour, day, month, year }) => {
   }
 };
 
-module.exports = { createEnergy, findEnergy };
+const findEnergysByday = async ({ electricMeterId, date }) => {
+  try {
+    const energys = await Energy.findAll({
+      where: { electricMeterId, date },
+    });
+    return energys;
+  } catch (error) {
+    return [];
+  }
+};
+
+module.exports = { createEnergy, findEnergy, findEnergysByday };

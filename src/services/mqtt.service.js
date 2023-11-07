@@ -72,9 +72,7 @@ const onMessage = async (topic, payload) => {
       const energy = await findEnergy({
         electricMeterId,
         hour: datetime.getHours(),
-        day: datetime.getDate(),
-        month: datetime.getMonth(),
-        year: datetime.getFullYear(),
+        date: datetime,
       });
       if (energy) {
         energy.lastValue = Energy;
@@ -89,7 +87,7 @@ const onMessage = async (topic, payload) => {
       if (em) {
         if (
           !lastEnergyChange ||
-          differenceInMilliseconds(lastEnergyChange.datetime, new Date()) >
+          differenceInMilliseconds(new Date(), lastEnergyChange.datetime) >
             60 * 1000
         ) {
           createEnergyChange({
