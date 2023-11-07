@@ -90,7 +90,7 @@ const onMessage = async (topic, payload) => {
         if (
           !lastEnergyChange ||
           differenceInMilliseconds(
-            lastEnergyChange.createdAt,
+            lastEnergyChange.datetime,
             new Date(Date.now())
           ) >
             60 * 1000

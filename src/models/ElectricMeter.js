@@ -105,9 +105,17 @@ ElectricMeter.init(
       allowNull: false,
       defaultValue: "00-00-00-00-00-00",
     },
+    acceptedAt: {
+      type: DataTypes.DATE,
+    },
+    updateAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   },
   {
     modelName: "ElectricMeter",
+    timestamps: false,
     sequelize,
   }
 );

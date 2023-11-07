@@ -17,7 +17,7 @@ Invitation.init(
     },
     datetime: {
       type: DataTypes.DATE,
-      defaultValue: new Date(Date.now()),
+      allowNull: false,
     },
     roomname: {
       type: DataTypes.STRING,
@@ -30,6 +30,7 @@ Invitation.init(
   },
   {
     modelName: "Invitation",
+    timestamps: false,
     sequelize,
   }
 );

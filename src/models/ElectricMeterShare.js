@@ -15,9 +15,14 @@ ElectricMeterShare.init(
       values: [...Object.values(ROLE_EM)],
       defaultValue: ROLE_EM.read_only,
     },
+    acceptedAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+    },
   },
   {
     modelName: "ElectricMeterShare",
+    timestamps: false,
     sequelize,
   }
 );

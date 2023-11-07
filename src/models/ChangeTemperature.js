@@ -20,6 +20,7 @@ ChangeTemperature.init(
   {
     modelName: "ChangeTemperature",
     sequelize,
+    timestamps: false,
   }
 );
 

@@ -18,10 +18,12 @@ Timer.init(
     },
     datetime: {
       type: DataTypes.DATE,
+      allowNull: false,
     },
   },
   {
     modelName: "Timer",
+    timestamps: false,
     sequelize,
   }
 );

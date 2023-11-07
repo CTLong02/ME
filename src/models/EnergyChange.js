@@ -16,9 +16,13 @@ EnergyChange.init(
       type: DataTypes.DOUBLE,
       allowNull: false,
     },
+    datetime: {
+      type: DataTypes.DATE,
+    },
   },
   {
     modelName: "EnergyChange",
+    timestamps: false,
     sequelize,
   }
 );

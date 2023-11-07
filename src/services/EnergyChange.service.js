@@ -1,11 +1,11 @@
 const EnergyChange = require("../models/EnergyChange");
 
-const createEnergyChange = async ({ electricMeterId, preValue, valueCur }) => {
+const createEnergyChange = async ({ electricMeterId, preValue, curValue }) => {
   try {
     const energyChange = await EnergyChange.create({
       electricMeterId,
       preValue,
-      valueCur,
+      curValue,
     });
     return !!energyChange ? energyChange : null;
   } catch (error) {
@@ -17,7 +17,7 @@ const getLastEnergyChange = async (electricMeterId) => {
   try {
     const energyChanges = await EnergyChange.findAll({
       where: { electricMeterId },
-      order: [["createdAt", "DESC"]],
+      order: [["acceptedAt", "DESC"]],
     });
     return energyChanges.length > 0 ? energyChanges[0].dataValues : null;
   } catch (error) {

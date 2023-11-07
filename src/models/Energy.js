@@ -20,16 +20,17 @@ Energy.init(
       type: DataTypes.TINYINT.UNSIGNED,
       allowNull: false,
     },
-    datetime: {
+    date: {
       type: DataTypes.DATEONLY,
     },
   },
   {
     modelName: "Energy",
     sequelize,
+    timestamps: false,
     indexes: [
-      { fields: ["electricMeterId", "datetime"] },
-      { fields: ["electricMeterId", "datetime", "hour"], unique: true },
+      { fields: ["electricMeterId", "date"] },
+      { fields: ["electricMeterId", "date", "hour"], unique: true },
     ],
   }
 );

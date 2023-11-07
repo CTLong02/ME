@@ -32,7 +32,7 @@ const renameRoom = async (req, res) => {
     }
     room.roomname = roomname;
     await room.save();
-    const { home, createdAt, updatedAt, ...roomData } = room.dataValues;
+    const { home, ...roomData } = room.dataValues;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       room: roomData,
     });

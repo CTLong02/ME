@@ -18,7 +18,7 @@ Notification.init(
       allowNull: true,
       defaultValue: null,
     },
-    datetime: DataTypes.DATE,
+    datetime: { type: DataTypes.DATE, allowNull: false },
     type: {
       type: DataTypes.ENUM,
       values: [...Object.values(TYPE_NOTIFICATION)],
@@ -31,6 +31,7 @@ Notification.init(
   },
   {
     modelName: "Notification",
+    timestamps: false,
     sequelize,
   }
 );

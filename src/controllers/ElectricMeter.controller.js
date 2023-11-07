@@ -20,7 +20,6 @@ const {
   checkRoomBelongAccount,
 } = require("../services/Room.service");
 const { createHome } = require("../services/Home.service");
-const { joinAccount } = require("../services/Account.service");
 const { publish } = require("../services/mqtt.service");
 const {
   findSharedEmsByAccountId,
@@ -40,6 +39,7 @@ const {
   updateEm,
   getAccountSharedListByEMId,
 } = require("../services/ElectricMeter.service");
+const { getAllInfor } = require("../services/Account.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -89,12 +89,10 @@ const addEM = async (req, res) => {
         {
           model: Home,
           as: "homes",
-          attributes: { exclude: ["createdAt", "updatedAt"] },
           include: [
             {
               model: Room,
               as: "rooms",
-              attributes: { exclude: ["createdAt", "updatedAt"] },
             },
           ],
         },
@@ -115,7 +113,9 @@ const addEM = async (req, res) => {
           ? electricMetername
           : findedEM.electricMetername;
         await findedEM.save();
-        const newAccount = await joinAccount(req.account.accountId);
+        const newAccount = await getAllInfor({
+          accountId: req.account.accountId,
+        });
         return responseSuccess(res, ResponseStatus.SUCCESS, {
           homes: newAccount.homes,
         });
@@ -157,7 +157,9 @@ const addEM = async (req, res) => {
         ? electricMetername
         : findedEM.electricMetername;
       await findedEM.save();
-      const newAccount = await joinAccount(req.account.accountId);
+      const newAccount = await getAllInfor({
+        accountId: req.account.accountId,
+      });
       return responseSuccess(res, ResponseStatus.SUCCESS, {
         homes: newAccount.homes,
       });
@@ -178,7 +180,9 @@ const addEM = async (req, res) => {
       ? electricMetername
       : findedEM.electricMetername;
     await findedEM.save();
-    const newAccount = await joinAccount(req.account.accountId);
+    const newAccount = await getAllInfor({
+      accountId: req.account.accountId,
+    });
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       homes: newAccount.homes,
     });
@@ -332,7 +336,7 @@ const getEms = async (req, res) => {
     while (i < lOwnEms || j < lSharedEms) {
       if (i < lOwnEms && j < lSharedEms) {
         const { acceptedAt, ...shareEm } = sharedEms[j];
-        if (ownEMs[i].createdAt < acceptedAt) {
+        if (ownEMs[i].acceptedAt < acceptedAt) {
           ems.push(ownEMs[i]);
           i++;
         } else {
@@ -545,7 +549,7 @@ const createData = async (req, res) => {
         year,
       });
       if (energy) {
-        energy.valueLast = sum;
+        energy.lastValue = sum;
         await energy.save();
       } else {
         const newEnergy = await Energy.create({
@@ -553,8 +557,9 @@ const createData = async (req, res) => {
           hour,
           datetime,
           firstValue: sum,
-          valueLast: sum,
+          lastValue: sum,
         });
+        console.log("");
       }
     }
     return responseSuccess(res, ResponseStatus.SUCCESS, {});

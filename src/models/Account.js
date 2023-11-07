@@ -48,6 +48,7 @@ Account.init(
   {
     modelName: "Account",
     sequelize,
+    timestamps: false,
     indexes: [
       { fields: ["email"], unique: true },
       { fields: ["phoneNumber"], unique: true },

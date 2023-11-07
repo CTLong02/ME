@@ -15,6 +15,7 @@ Home.init(
   },
   {
     modelName: "Home",
+    timestamps: false,
     sequelize,
   }
 );

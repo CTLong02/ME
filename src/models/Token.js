@@ -15,6 +15,7 @@ Token.init(
   {
     modelName: "Token",
     sequelize,
+    timestamps: false,
     indexes: [{ fields: ["accountId"], unique: true }],
   }
 );

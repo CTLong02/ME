@@ -16,6 +16,7 @@ Room.init(
   },
   {
     modelName: "Room",
+    timestamps: false,
     sequelize,
   }
 );

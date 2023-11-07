@@ -16,7 +16,7 @@ const addHome = async (req, res) => {
     const home = await createHome({ accountId, homename });
     if (home) {
       const homes = (await getHomesByAccountId(accountId)).map((home) => {
-        const { createdAt, updatedAt, accountId, ...data } = home;
+        const { accountId, ...data } = home;
         return data;
       });
       return responseSuccess(res, ResponseStatus.SUCCESS, { homes });
@@ -42,7 +42,7 @@ const renameHome = async (req, res) => {
     }
     home.homename = homename;
     await home.save();
-    const { createdAt, updatedAt, ...dataHome } = home.dataValues;
+    const { ...dataHome } = home.dataValues;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       home: dataHome,
     });

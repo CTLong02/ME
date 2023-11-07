@@ -16,6 +16,7 @@ const createInvitation = async ({
       roleShare,
       roomname,
       homename,
+      datetime: new Date(),
     });
     return invitation;
   } catch (error) {

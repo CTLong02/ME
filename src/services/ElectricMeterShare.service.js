@@ -22,6 +22,7 @@ const createEMShareForAnAccount = async ({
       electricMeterId,
       roomId: room.roomId,
       roleShare,
+      acceptedAt: new Date(),
     });
     return !!emShare ? emShare : null;
   } catch (error) {
@@ -74,10 +75,10 @@ const findShareAccountsByEMId = async (electricMeterId) => {
   try {
     const accounts = await ElectricMeterShare.findAll({
       where: { electricMeterId },
-      order: [["createdAt", "ASC"]],
+      order: [["acceptedAt", "ASC"]],
       attributes: [
         "roleShare",
-        "createdAt",
+        "acceptedAt",
         [Sequelize.col("room.home.account.accountId"), "accountId"],
         [Sequelize.col("room.home.account.email"), "email"],
         [Sequelize.col("room.home.account.fullname"), "fullname"],
@@ -234,11 +235,11 @@ const updateEMShare = async ({
 const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
   try {
     const sharedEms = await ElectricMeterShare.findAll({
-      order: [["createdAt", "ASC"]],
+      order: [["acceptedAt", "ASC"]],
       attributes: [
         "electricMeterId",
+        "acceptedAt",
         ["roleShare", "role"],
-        [Sequelize.col("electricMeter.createdAt"), "acceptedAt"],
         [Sequelize.col("electricMeter.electricMetername"), "electricMetername"],
         [Sequelize.col("room.roomId"), "roomId"],
         [Sequelize.col("room.roomname"), "roomname"],
@@ -250,7 +251,7 @@ const findSharedEmsByAccountId = async ({ roomId, homeId, accountId }) => {
           model: ElectricMeter,
           as: "electricMeter",
           required: true,
-          attributes: { exclude: ["updatedAt", "roomId"] },
+          attributes: { exclude: ["roomId"] },
         },
         {
           model: Room,

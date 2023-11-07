@@ -50,7 +50,6 @@ const findEM = async (electricMeterId) => {
 const findEMById = async (electricMeterId) => {
   try {
     const electricMeter = await ElectricMeter.findOne({
-      attributes: { exclude: ["createdAt", "updatedAt"] },
       where: { electricMeterId },
     });
     return !!electricMeter ? electricMeter.dataValues : null;
@@ -95,7 +94,6 @@ const findAccountByEMId = async (electricMeterId) => {
 const findEMsByAcountId = async ({ roomId, homeId, accountId }) => {
   try {
     const ownEMs = await ElectricMeter.findAll({
-      order: [["createdAt", "ASC"]],
       attributes: [
         "electricMeterId",
         "electricMetername",
@@ -195,16 +193,16 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
     let j = 0;
     while (i < lenSharedAccounts || j < lenInvitations) {
       if (i < lenSharedAccounts && j < lenInvitations) {
-        const { createdAt, ...sharedData } = sharedAccount[i];
+        const { accepted, ...sharedData } = sharedAccount[i];
         const { datetime, electricMeterName, ...invitationData } =
           invitations[j];
-        if (createdAt < datetime) {
+        if (accepted < datetime) {
           const { roleShare } = sharedAccount[i];
           shareAccounts.push({
             ...sharedData,
             roleShare,
             accepted: true,
-            datetime: createdAt,
+            datetime: accepted,
           });
           i++;
         } else {
@@ -218,12 +216,12 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
           j++;
         }
       } else if (i < lenSharedAccounts) {
-        const { createdAt, roleShare, ...sharedData } = sharedAccount[i];
+        const { accepted, roleShare, ...sharedData } = sharedAccount[i];
         shareAccounts.push({
           ...sharedData,
           roleShare,
           accepted: true,
-          datetime: createdAt,
+          datetime: accepted,
         });
         i++;
       } else {

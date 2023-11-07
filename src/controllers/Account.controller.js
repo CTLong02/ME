@@ -1,7 +1,6 @@
 const {
   createAccount,
   findAccount,
-  joinAccount,
   getListInvitationByAccountId,
   getAllInfor,
 } = require("../services/Account.service");
