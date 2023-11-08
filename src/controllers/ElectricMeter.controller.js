@@ -1,23 +1,40 @@
-const { differenceInMilliseconds } = require("date-fns");
+const {
+  differenceInMilliseconds,
+  getDaysInMonth,
+  setHours,
+  startOfMonth,
+} = require("date-fns");
+
 const Account = require("../models/Account");
 const Home = require("../models/Home");
 const Room = require("../models/Room");
 const ElectricMeter = require("../models/ElectricMeter");
 const Energy = require("../models/Energy");
+
 const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
+const { toFloat2 } = require("../utils/helper/AppHelper");
+
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const { ROLE_EM } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
 const { REQUEST_COMAND } = require("../config/constant/command");
+
 const {
   createRoom,
   checkRoomBelongAccount,
 } = require("../services/Room.service");
-const { findEnergy, findEnergysByday } = require("../services/Energy.service");
+const {
+  createEnergy,
+  findEnergy,
+  findEnergysByday,
+  findFirstEnergyOnDay,
+  findLastEnergyOnDay,
+  getAllEnergyOnMonth,
+} = require("../services/Energy.service");
 const { getEnergyChangesByDate } = require("../services/EnergyChange.service");
 const { createHome } = require("../services/Home.service");
 const { publish } = require("../services/mqtt.service");
@@ -393,17 +410,20 @@ const viewDetailEm = async (req, res) => {
 const viewReportByDay = async (req, res) => {
   try {
     const { date } = req.query;
+    if (!date) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
+    }
     const { electricMeterId } = req.em;
     const datetime = new Date(date);
     const energys = await findEnergysByday({ electricMeterId, date: datetime });
     const energysByDay = [];
+
     for (let i = 0; i < energys.length; i++) {
       const energy = energys[i];
       const {
         firstValue,
         lastValue,
         hour,
-        date,
         electricMeterId,
         createdAt,
         updatedAt,
@@ -426,7 +446,27 @@ const viewReportByDay = async (req, res) => {
       const energyByHour = Number.parseFloat(value.toFixed(2));
       energysByDay.push({ energyByHour, hour });
     }
-    return responseSuccess(res, ResponseStatus.SUCCESS, { energysByDay });
+    let maxByDay = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
+    let minByDay = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
+    let sum = 0;
+    energysByDay.forEach((energyByDay) => {
+      const energy = energyByDay.energyByHour;
+      sum += energy;
+      maxByDay = maxByDay > energy ? maxByDay : energy;
+      minByDay = minByDay > energy ? energy : minByDay;
+    });
+    maxByDay = toFloat2(maxByDay);
+    minByDay = toFloat2(minByDay);
+    const averageByDay =
+      energysByDay.length > 0
+        ? Number.parseFloat((sum / energysByDay.length).toFixed(2))
+        : 0;
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      energysByDay,
+      minByDay,
+      maxByDay,
+      averageByDay,
+    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
   }
@@ -435,6 +475,65 @@ const viewReportByDay = async (req, res) => {
 //Báo cáo công tơ theo tháng
 const viewReportByMonth = async (req, res) => {
   try {
+    const { date } = req.query;
+    const { electricMeterId } = req.em;
+    if (!date) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const datetime = new Date(date);
+    const startMonth = startOfMonth(datetime);
+    const daysInMonth = getDaysInMonth(datetime);
+    const energysByMonth = await getAllEnergyOnMonth({
+      electricMeterId,
+      date: datetime,
+    });
+    for (let i = 1; i <= daysInMonth; i++) {}
+    // for (let i = 1; i <= daysInMonth; i++) {
+    //   const preDayOfMonth = setDate(startMonth, i - 1);
+    //   const dayOfMonth = setDate(startMonth, i);
+    //   const lastEnergyByPreDay = await findLastEnergyOnDay({
+    //     electricMeterId,
+    //     date: preDayOfMonth,
+    //   });
+    //   const lastEnergyByDay = await findLastEnergyOnDay({
+    //     electricMeterId,
+    //     date: dayOfMonth,
+    //   });
+    //   if (!lastEnergyByDay) {
+    //     energysByMonth.push({ day: i, energyByDay: 0 });
+    //     continue;
+    //   }
+
+    //   const firstEnergyByDay = await findFirstEnergyOnDay({
+    //     electricMeterId,
+    //     date: dayOfMonth,
+    //   });
+
+    //   const fromDate = new Date(
+    //     lastEnergyByPreDay
+    //       ? lastEnergyByDay.dataValues.updatedAt
+    //       : firstEnergyByDay.dataValues.createdAt
+    //   );
+    //   const toDate = new Date(lastEnergyByDay.dataValues.updatedAt);
+    //   const energyChanges = await getEnergyChangesByDate({
+    //     electricMeterId,
+    //     fromDate,
+    //     toDate,
+    //   });
+    //   const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
+    //     const { preValue, curValue } = energyChange.dataValues;
+    //     return acc + curValue - preValue;
+    //   }, 0);
+    //   const value =
+    //     lastEnergyByDay.dataValues.lastValue -
+    //     (lastEnergyByPreDay
+    //       ? lastEnergyByPreDay.dataValues.lastValue
+    //       : firstEnergyByDay.dataValues.firstValue) -
+    //     sumIncreasement;
+    //   const energyByDay = value > 0 ? toFloat2(value) : 0;
+    //   energysByMonth.push({ day: i, energyByDay });
+    // }
+    return responseSuccess(res, ResponseStatus.SUCCESS, { energysByMonth });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -571,28 +670,45 @@ const createData = async (req, res) => {
   try {
     const electricMeterId = "SMR-64B708A0E22C";
     let sum = 0;
-    for (let i = 1; i <= 1440; i++) {
+    for (let i = 1; i <= 1440 * 30; i++) {
       const random = Number.parseFloat(Math.random().toFixed(2));
       sum = Number.parseFloat((sum + random).toFixed(2));
       const datetime = new Date(2022, 4, 1, 0, i);
       const hour = datetime.getHours();
       const energy = await findEnergy({
         electricMeterId,
-        datetime,
+        hour,
+        date: datetime,
       });
       if (energy) {
         energy.lastValue = sum;
         await energy.save();
       } else {
-        const newEnergy = await Energy.create({
+        const newDate = setHours(datetime, hour - 1);
+        const preEnergy = await findEnergy({
           electricMeterId,
-          hour,
-          date: datetime,
-          firstValue: sum,
-          lastValue: sum,
+          hour: newDate.getHours(),
+          date: newDate,
         });
-        console.log("");
+        if (preEnergy) {
+          await Energy.create({
+            electricMeterId,
+            firstValue: preEnergy.lastValue,
+            lastValue: sum,
+            hour,
+            date: datetime,
+          });
+        } else {
+          await Energy.create({
+            electricMeterId,
+            firstValue: sum,
+            lastValue: sum,
+            hour,
+            date: datetime,
+          });
+        }
       }
+      console.log();
     }
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
   } catch (error) {

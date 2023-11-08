@@ -32,4 +32,8 @@ const handleConn = (conn) => {
   }
 };
 
-module.exports = { handleUpdateFirmware, handleConn };
+const toFloat2 = (value) => {
+  return Number.parseFloat(value.toFixed(2));
+};
+
+module.exports = { handleUpdateFirmware, handleConn, toFloat2 };

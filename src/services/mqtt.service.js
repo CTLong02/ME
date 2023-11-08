@@ -1,4 +1,4 @@
-const { differenceInMilliseconds } = require("date-fns");
+const { differenceInMilliseconds, setHours } = require("date-fns");
 const client = require("../config/mqtt/connect");
 const { RESPONSE_COMAND } = require("../config/constant/command");
 const { addEM, findEMById, updateEm } = require("./ElectricMeter.service");
@@ -78,7 +78,25 @@ const onMessage = async (topic, payload) => {
         energy.lastValue = Energy;
         await energy.save();
       } else {
-        createEnergy({ electricMeterId, firstValue: Energy });
+        const newDate = setHours(datetime, datetime.getHours() - 1);
+        const preEnergy = await findEnergy({
+          electricMeterId,
+          hour: newDate.getHours(),
+          date: newDate,
+        });
+        if (preEnergy) {
+          createEnergy({
+            electricMeterId,
+            firstValue: preEnergy.lastValue,
+            lastValue: Energy,
+          });
+        } else {
+          createEnergy({
+            electricMeterId,
+            firstValue: Energy,
+            lastValue: Energy,
+          });
+        }
       }
       break;
     case RESPONSE_COMAND.CHANGE_EM:
