@@ -3,6 +3,10 @@ const {
   getDaysInMonth,
   setHours,
   startOfMonth,
+  startOfDay,
+  setDate,
+  endOfDay,
+  differenceInDays,
 } = require("date-fns");
 
 const Account = require("../models/Account");
@@ -28,14 +32,14 @@ const {
   checkRoomBelongAccount,
 } = require("../services/Room.service");
 const {
-  createEnergy,
   findEnergy,
   findEnergysByday,
-  findFirstEnergyOnDay,
-  findLastEnergyOnDay,
   getAllEnergyOnMonth,
 } = require("../services/Energy.service");
-const { getEnergyChangesByDate } = require("../services/EnergyChange.service");
+const {
+  getEnergyChangesOnDay,
+  getEnergyChangesOnMonth,
+} = require("../services/EnergyChange.service");
 const { createHome } = require("../services/Home.service");
 const { publish } = require("../services/mqtt.service");
 const {
@@ -416,28 +420,21 @@ const viewReportByDay = async (req, res) => {
     const { electricMeterId } = req.em;
     const datetime = new Date(date);
     const energys = await findEnergysByday({ electricMeterId, date: datetime });
+    const energyChanges = await getEnergyChangesOnDay({
+      electricMeterId,
+      datetime,
+    });
     const energysByDay = [];
 
     for (let i = 0; i < energys.length; i++) {
       const energy = energys[i];
-      const {
-        firstValue,
-        lastValue,
-        hour,
-        electricMeterId,
-        createdAt,
-        updatedAt,
-      } = energy.dataValues;
-      const fromDate = new Date(createdAt);
-      const toDate = new Date(updatedAt);
-      const energyChanges = await getEnergyChangesByDate({
-        electricMeterId,
-        fromDate,
-        toDate,
-      });
+      const { firstValue, lastValue, hour, createdAt, updatedAt } =
+        energy.dataValues;
       const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
-        const { preValue, curValue } = energyChange.dataValues;
-        return acc + curValue - preValue;
+        const { preValue, curValue, datetime } = energyChange;
+        return datetime >= createdAt && datetime <= updatedAt
+          ? acc + curValue - preValue
+          : acc;
       }, 0);
       const value =
         lastValue - firstValue - sumIncreasement > 0
@@ -481,58 +478,30 @@ const viewReportByMonth = async (req, res) => {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     const datetime = new Date(date);
-    const startMonth = startOfMonth(datetime);
     const daysInMonth = getDaysInMonth(datetime);
     const energysByMonth = await getAllEnergyOnMonth({
       electricMeterId,
       date: datetime,
     });
-    for (let i = 1; i <= daysInMonth; i++) {}
-    // for (let i = 1; i <= daysInMonth; i++) {
-    //   const preDayOfMonth = setDate(startMonth, i - 1);
-    //   const dayOfMonth = setDate(startMonth, i);
-    //   const lastEnergyByPreDay = await findLastEnergyOnDay({
-    //     electricMeterId,
-    //     date: preDayOfMonth,
-    //   });
-    //   const lastEnergyByDay = await findLastEnergyOnDay({
-    //     electricMeterId,
-    //     date: dayOfMonth,
-    //   });
-    //   if (!lastEnergyByDay) {
-    //     energysByMonth.push({ day: i, energyByDay: 0 });
-    //     continue;
-    //   }
-
-    //   const firstEnergyByDay = await findFirstEnergyOnDay({
-    //     electricMeterId,
-    //     date: dayOfMonth,
-    //   });
-
-    //   const fromDate = new Date(
-    //     lastEnergyByPreDay
-    //       ? lastEnergyByDay.dataValues.updatedAt
-    //       : firstEnergyByDay.dataValues.createdAt
-    //   );
-    //   const toDate = new Date(lastEnergyByDay.dataValues.updatedAt);
-    //   const energyChanges = await getEnergyChangesByDate({
-    //     electricMeterId,
-    //     fromDate,
-    //     toDate,
-    //   });
-    //   const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
-    //     const { preValue, curValue } = energyChange.dataValues;
-    //     return acc + curValue - preValue;
-    //   }, 0);
-    //   const value =
-    //     lastEnergyByDay.dataValues.lastValue -
-    //     (lastEnergyByPreDay
-    //       ? lastEnergyByPreDay.dataValues.lastValue
-    //       : firstEnergyByDay.dataValues.firstValue) -
-    //     sumIncreasement;
-    //   const energyByDay = value > 0 ? toFloat2(value) : 0;
-    //   energysByMonth.push({ day: i, energyByDay });
-    // }
+    const energyChanges = await getEnergyChangesOnMonth({
+      electricMeterId,
+      datetime,
+    });
+    for (let i = 1; i <= daysInMonth; i++) {
+      const dateOfMonth = setDate(datetime, i);
+      const dateStartOfDay = startOfDay(dateOfMonth);
+      const dateEndOfDay = endOfDay(dateOfMonth);
+      const energysOnDay = energysByMonth.filter(
+        (energyByMonth) =>
+          differenceInDays(new Date(energyByMonth.date), dateOfMonth) === 0
+      );
+      const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
+        const { preValue, curValue, datetime } = energyChange;
+        return datetime >= date && datetime <= updatedAt
+          ? acc + curValue - preValue
+          : acc;
+      }, 0);
+    }
     return responseSuccess(res, ResponseStatus.SUCCESS, { energysByMonth });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");

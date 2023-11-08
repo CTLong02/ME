@@ -1,11 +1,13 @@
+const Room = require("../models/Room");
+const Home = require("../models/Home");
+const Account = require("../models/Account");
+
 const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
 const ResponseStatus = require("../config/constant/response_status");
-const Room = require("../models/Room");
-const Home = require("../models/Home");
-const Account = require("../models/Account");
+
 const renameRoom = async (req, res) => {
   try {
     const { roomname, roomId } = req.body;

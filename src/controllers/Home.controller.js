@@ -1,9 +1,12 @@
+const Home = require("../models/Home");
+
 const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
+
 const ResponseStatus = require("../config/constant/response_status");
-const Home = require("../models/Home");
+
 const { createHome, getHomesByAccountId } = require("../services/Home.service");
 
 const addHome = async (req, res) => {

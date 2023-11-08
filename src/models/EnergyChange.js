@@ -25,6 +25,7 @@ EnergyChange.init(
     modelName: "EnergyChange",
     timestamps: false,
     sequelize,
+    indexes: [{ fields: ["electricMeterId", "datetime"], unique: true }],
   }
 );
 
