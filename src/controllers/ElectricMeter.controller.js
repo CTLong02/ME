@@ -443,26 +443,26 @@ const viewReportByDay = async (req, res) => {
       const energyByHour = Number.parseFloat(value.toFixed(2));
       energysByDay.push({ energyByHour, hour });
     }
-    let maxByDay = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
-    let minByDay = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
+    let maxByHour = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
+    let minByHour = energysByDay.length > 0 ? energysByDay[0].energyByHour : 0;
     let sum = 0;
     energysByDay.forEach((energyByDay) => {
       const energy = energyByDay.energyByHour;
       sum += energy;
-      maxByDay = maxByDay > energy ? maxByDay : energy;
-      minByDay = minByDay > energy ? energy : minByDay;
+      maxByHour = maxByHour > energy ? maxByHour : energy;
+      minByHour = minByHour > energy ? energy : minByHour;
     });
-    maxByDay = toFloat2(maxByDay);
-    minByDay = toFloat2(minByDay);
-    const averageByDay =
+    maxByHour = toFloat2(maxByHour);
+    minByHour = toFloat2(minByHour);
+    const averageByHour =
       energysByDay.length > 0
         ? Number.parseFloat((sum / energysByDay.length).toFixed(2))
         : 0;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       energysByDay,
-      minByDay,
-      maxByDay,
-      averageByDay,
+      minByHour,
+      maxByHour,
+      averageByHour,
     });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số ");
@@ -478,8 +478,9 @@ const viewReportByMonth = async (req, res) => {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     const datetime = new Date(date);
+    const energysByMonth = [];
     const daysInMonth = getDaysInMonth(datetime);
-    const energysByMonth = await getAllEnergyOnMonth({
+    const energysOnMonth = await getAllEnergyOnMonth({
       electricMeterId,
       date: datetime,
     });
@@ -487,22 +488,46 @@ const viewReportByMonth = async (req, res) => {
       electricMeterId,
       datetime,
     });
+    let maxByDay = 0;
+    let minByDay = Number.MAX_SAFE_INTEGER;
+    let sum = 0;
     for (let i = 1; i <= daysInMonth; i++) {
       const dateOfMonth = setDate(datetime, i);
-      const dateStartOfDay = startOfDay(dateOfMonth);
-      const dateEndOfDay = endOfDay(dateOfMonth);
-      const energysOnDay = energysByMonth.filter(
-        (energyByMonth) =>
-          differenceInDays(new Date(energyByMonth.date), dateOfMonth) === 0
+      const energysOnDay = energysOnMonth.filter(
+        (energyOnMonth) =>
+          differenceInDays(new Date(energyOnMonth.date), dateOfMonth) === 0
       );
+      energysOnDay.sort((a, b) => a.hour - b.hour);
+      if (endOfDay.length === 0) {
+        energysByMonth.push({ day: i, energyByDay: 0 });
+        continue;
+      }
+      const firstEnergyOnday = energysOnDay[0];
+      const lastEnergyOnday = energysOnDay[energysOnDay.length - 1];
       const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
         const { preValue, curValue, datetime } = energyChange;
-        return datetime >= date && datetime <= updatedAt
+        return datetime >= firstEnergyOnday.createdAt &&
+          datetime <= lastEnergyOnday.updatedAt
           ? acc + curValue - preValue
           : acc;
       }, 0);
+      const value =
+        lastEnergyOnday.lastValue -
+        firstEnergyOnday.firstValue -
+        sumIncreasement;
+      const energyByDay = value > 0 ? toFloat2(value) : 0;
+      maxByDay = maxByDay < energyByDay ? energyByDay : maxByDay;
+      minByDay = minByDay > energyByDay ? energyByDay : minByDay;
+      sum = toFloat2(sum + value);
+      energysByMonth.push({ day: i, energyByDay });
     }
-    return responseSuccess(res, ResponseStatus.SUCCESS, { energysByMonth });
+    const averageByDay = toFloat2(sum / daysInMonth);
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      energysByMonth,
+      maxByDay,
+      minByDay,
+      averageByDay,
+    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
