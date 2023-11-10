@@ -12,12 +12,12 @@ Timer.init(
       type: DataTypes.TINYINT,
       allowNull: false,
     },
-    daily: {
-      type: DataTypes.INTEGER,
+    time: {
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
     },
-    datetime: {
-      type: DataTypes.DATE,
+    daily: {
+      type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
     },
   },
@@ -25,6 +25,13 @@ Timer.init(
     modelName: "Timer",
     timestamps: false,
     sequelize,
+    indexes: [
+      { fields: ["electricMeterId", "actionId"] },
+      {
+        fields: ["electricMeterId", "actionId", "time", "daily"],
+        unique: true,
+      },
+    ],
   }
 );
 

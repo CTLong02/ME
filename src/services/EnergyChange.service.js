@@ -1,4 +1,11 @@
-const { startOfDay, endOfDay, startOfMonth, endOfMonth } = require("date-fns");
+const {
+  startOfDay,
+  endOfDay,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} = require("date-fns");
 const EnergyChange = require("../models/EnergyChange");
 const { Op } = require("sequelize");
 
@@ -83,10 +90,29 @@ const getEnergyChangesOnMonth = async ({ electricMeterId, datetime }) => {
   }
 };
 
+const getEnergyChangesOnYear = async ({ electricMeterId, datetime }) => {
+  try {
+    const dateStartOfYear = startOfYear(datetime);
+    const dateEndOfYear = endOfYear(datetime);
+    const energyChanges = await EnergyChange.findAll({
+      where: {
+        electricMeterId,
+        datetime: { [Op.between]: [dateStartOfYear, dateEndOfYear] },
+      },
+    });
+    return energyChanges
+      ? energyChanges.map((energyChange) => energyChange.dataValues)
+      : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 module.exports = {
   createEnergyChange,
   getLastEnergyChange,
   getEnergyChangesByDate,
   getEnergyChangesOnDay,
   getEnergyChangesOnMonth,
+  getEnergyChangesOnYear,
 };

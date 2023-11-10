@@ -16,6 +16,7 @@ const {
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
+  viewReportByYear,
   renameEm,
   moveToRoom,
   getAccountSharedList,
@@ -46,7 +47,7 @@ ElectricMeterRouter.put(
 
 ElectricMeterRouter.get(URL_EM.getEms, [authMiddleware], getEms);
 
-ElectricMeterRouter.get(
+ElectricMeterRouter.post(
   URL_EM.addTimer,
   [authMiddleware, permisionEmMiddleware],
   addTimer
@@ -68,6 +69,12 @@ ElectricMeterRouter.get(
   URL_EM.viewReportByMonth,
   [authMiddleware, permisionEmMiddleware],
   viewReportByMonth
+);
+
+ElectricMeterRouter.get(
+  URL_EM.viewReportByYear,
+  [authMiddleware, permisionEmMiddleware],
+  viewReportByYear
 );
 
 ElectricMeterRouter.put(

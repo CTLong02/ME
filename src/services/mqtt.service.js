@@ -1,17 +1,22 @@
 const { differenceInMilliseconds, setHours } = require("date-fns");
+const moment = require("moment");
+
 const client = require("../config/mqtt/connect");
+
 const { RESPONSE_COMAND } = require("../config/constant/command");
-const { addEM, findEMById, updateEm } = require("./ElectricMeter.service");
+const { TIMER_ACTION_ID } = require("../config/constant/constant_model");
 const {
   handleConn,
   handleUpdateFirmware,
 } = require("../utils/helper/AppHelper");
+
+const { addEM, findEMById, updateEm } = require("./ElectricMeter.service");
 const { createEnergy, findEnergy } = require("./Energy.service");
+const { createTimers, deleteTimers } = require("./Timer.service");
 const {
   createEnergyChange,
   getLastEnergyChange,
 } = require("./EnergyChange.service");
-const moment = require("moment");
 
 const publish = async ({ electricMeterId, command, data }) => {
   const message = { command, ...data };
@@ -124,6 +129,34 @@ const onMessage = async (topic, payload) => {
       break;
     case RESPONSE_COMAND.INFOR_EM:
       addEM(data);
+      break;
+    case RESPONSE_COMAND.TIMER:
+      const { Timeon, Dailyon, Timeoff, Dailyoff } = data;
+      const timers = [];
+      for (let i = 0; i < Timeon.length; i++) {
+        if (Dailyon[i] === 0) {
+          continue;
+        }
+        timers.push({
+          electricMeterId,
+          actionId: TIMER_ACTION_ID.on,
+          time: Timeon[i],
+          daily: Dailyon[i],
+        });
+      }
+      for (let j = 0; j < Timeoff.length; j++) {
+        if (Dailyoff[j] === 0) {
+          continue;
+        }
+        timers.push({
+          electricMeterId,
+          actionId: TIMER_ACTION_ID.off,
+          time: Timeoff[j],
+          daily: Dailyoff[j],
+        });
+      }
+      await deleteTimers(electricMeterId);
+      createTimers(timers);
       break;
     default:
   }

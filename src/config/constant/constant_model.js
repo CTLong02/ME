@@ -42,3 +42,8 @@ module.exports.TIMER_ACTION = {
   on: "on",
   off: "off",
 };
+
+module.exports.TIMER_ACTION_ID = {
+  on: 1,
+  off: 0,
+};

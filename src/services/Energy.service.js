@@ -1,6 +1,11 @@
 const Energy = require("../models/Energy");
 const { Op } = require("sequelize");
-const { startOfMonth, endOfMonth } = require("date-fns");
+const {
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+} = require("date-fns");
 
 const createEnergy = async ({ electricMeterId, firstValue, lastValue }) => {
   try {
@@ -87,6 +92,24 @@ const getAllEnergyOnMonth = async ({ electricMeterId, date }) => {
   }
 };
 
+const getAllEnergyOnYear = async ({ electricMeterId, date }) => {
+  try {
+    const dateStartOfYear = startOfYear(date);
+    const dateEndOfYear = endOfYear(date);
+    const energys = await Energy.findAll({
+      where: {
+        electricMeterId,
+        date: {
+          [Op.between]: [dateStartOfYear, dateEndOfYear],
+        },
+      },
+    });
+    return energys ? energys.map((energy) => energy.dataValues) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 module.exports = {
   createEnergy,
   findEnergy,
@@ -94,5 +117,5 @@ module.exports = {
   findFirstEnergyOnDay,
   findLastEnergyOnDay,
   getAllEnergyOnMonth,
-  getAllEnergyOnMonth,
+  getAllEnergyOnYear,
 };

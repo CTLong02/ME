@@ -1,12 +1,11 @@
 const {
   differenceInMilliseconds,
+  differenceInCalendarDays,
+  differenceInCalendarMonths,
   getDaysInMonth,
   setHours,
-  startOfMonth,
-  startOfDay,
   setDate,
-  endOfDay,
-  differenceInDays,
+  setMonth,
 } = require("date-fns");
 
 const Account = require("../models/Account");
@@ -23,7 +22,10 @@ const { toFloat2 } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
-const { ROLE_EM } = require("../config/constant/constant_model");
+const {
+  ROLE_EM,
+  TIMER_ACTION_ID,
+} = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
 const { REQUEST_COMAND } = require("../config/constant/command");
 
@@ -35,10 +37,12 @@ const {
   findEnergy,
   findEnergysByday,
   getAllEnergyOnMonth,
+  getAllEnergyOnYear,
 } = require("../services/Energy.service");
 const {
   getEnergyChangesOnDay,
   getEnergyChangesOnMonth,
+  getEnergyChangesOnYear,
 } = require("../services/EnergyChange.service");
 const { createHome } = require("../services/Home.service");
 const { publish } = require("../services/mqtt.service");
@@ -61,6 +65,7 @@ const {
   getAccountSharedListByEMId,
 } = require("../services/ElectricMeter.service");
 const { getAllInfor } = require("../services/Account.service");
+const { createTimer, getTimersByEMId } = require("../services/Timer.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -138,7 +143,7 @@ const addEM = async (req, res) => {
         const newAccount = await getAllInfor({
           accountId: req.account.accountId,
         });
-        return responseSuccess(res, ResponseStatus.SUCCESS, {
+        return responseSuccess(res, ResponseStatus.CREATED, {
           homes: newAccount.homes,
         });
       }
@@ -183,7 +188,7 @@ const addEM = async (req, res) => {
       const newAccount = await getAllInfor({
         accountId: req.account.accountId,
       });
-      return responseSuccess(res, ResponseStatus.SUCCESS, {
+      return responseSuccess(res, ResponseStatus.CREATED, {
         homes: newAccount.homes,
       });
     }
@@ -207,7 +212,7 @@ const addEM = async (req, res) => {
     const newAccount = await getAllInfor({
       accountId: req.account.accountId,
     });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
+    return responseSuccess(res, ResponseStatus.CREATED, {
       homes: newAccount.homes,
     });
   } catch (error) {
@@ -263,7 +268,7 @@ const shareEm = async (req, res) => {
       deleteInvitation({ electricMeterId, accountId });
     }, TIME.TIME_SHARE_REQUEST);
 
-    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+    return responseSuccess(res, ResponseStatus.CREATED, {});
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -392,6 +397,61 @@ const getEms = async (req, res) => {
 //Thêm lịch tình
 const addTimer = async (req, res) => {
   try {
+    const { electricMeterId } = req.em;
+    const { actionId, time, daily } = req.body;
+    if (!time || !daily) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    if (
+      !Object.values(TIMER_ACTION_ID).includes(actionId) ||
+      time < 0 ||
+      time > TIME.Time_MAX_ON_DAY ||
+      daily < 0 ||
+      daily > 128
+    ) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    }
+    const allTimers = await getTimersByEMId({ electricMeterId });
+    const timeOn = [];
+    const timeOff = [];
+    const dailyOn = [];
+    const dailyOff = [];
+    allTimers.forEach((timer) => {
+      if (timer.actionId === TIMER_ACTION_ID.on) {
+        timeOn.push(timer.time);
+        dailyOn.push(timer.daily);
+      } else if (timer.actionId === TIMER_ACTION_ID.off) {
+        timeOff.push(timer.time);
+        dailyOff.push(timer.daily);
+      }
+    });
+    if (actionId === TIMER_ACTION_ID.on) {
+      timeOn.push(time);
+      dailyOn.push(daily);
+    } else {
+      timeOff.push(time);
+      dailyOff.push(daily);
+    }
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.TIMER,
+      data: {
+        Timeon: timeOn,
+        Dailyon: dailyOn,
+        Timeoff: timeOff,
+        Dailyoff: dailyOff,
+      },
+    });
+    return responseSuccess(res, ResponseStatus.CREATED, {
+      timers: [
+        ...allTimers.map((timer) => {
+          delete timer.timerId;
+          delete timer.electricMeterId;
+          return timer;
+        }),
+        { actionId, time, daily },
+      ],
+    });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -491,17 +551,22 @@ const viewReportByMonth = async (req, res) => {
     let maxByDay = 0;
     let minByDay = Number.MAX_SAFE_INTEGER;
     let sum = 0;
+    let days = 0;
     for (let i = 1; i <= daysInMonth; i++) {
       const dateOfMonth = setDate(datetime, i);
       const energysOnDay = energysOnMonth.filter(
         (energyOnMonth) =>
-          differenceInDays(new Date(energyOnMonth.date), dateOfMonth) === 0
+          differenceInCalendarDays(
+            new Date(energyOnMonth.date),
+            dateOfMonth
+          ) === 0
       );
       energysOnDay.sort((a, b) => a.hour - b.hour);
-      if (endOfDay.length === 0) {
+      if (energysOnDay.length === 0) {
         energysByMonth.push({ day: i, energyByDay: 0 });
         continue;
       }
+      days++;
       const firstEnergyOnday = energysOnDay[0];
       const lastEnergyOnday = energysOnDay[energysOnDay.length - 1];
       const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
@@ -521,7 +586,7 @@ const viewReportByMonth = async (req, res) => {
       sum = toFloat2(sum + value);
       energysByMonth.push({ day: i, energyByDay });
     }
-    const averageByDay = toFloat2(sum / daysInMonth);
+    const averageByDay = days > 0 ? toFloat2(sum / days) : 0;
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       energysByMonth,
       maxByDay,
@@ -533,6 +598,75 @@ const viewReportByMonth = async (req, res) => {
   }
 };
 
+//Báo cáo công tơ theo năm
+const viewReportByYear = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const { electricMeterId } = req.em;
+    if (!date) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const datetime = new Date(date);
+    const energysByYear = [];
+    const energysOnYear = await getAllEnergyOnYear({
+      electricMeterId,
+      date: datetime,
+    });
+    const energyChanges = await getEnergyChangesOnYear({
+      electricMeterId,
+      datetime,
+    });
+    let maxByMonth = 0;
+    let minByMonth = Number.MAX_SAFE_INTEGER;
+    let sum = 0;
+    let months = 0;
+    for (let i = 1; i <= 12; i++) {
+      const monthOfYear = setMonth(datetime, i - 1);
+      const energysOnMonth = energysOnYear.filter(
+        (energyOnYear) =>
+          differenceInCalendarMonths(
+            new Date(energyOnYear.date),
+            monthOfYear
+          ) === 0
+      );
+      energysOnMonth.sort(
+        (a, b) => a.date - b.date || (a.date === b.date && a.hour - b.hour)
+      );
+      if (energysOnMonth.length === 0) {
+        energysByYear.push({ month: i, energyByMonth: 0 });
+        continue;
+      }
+      months++;
+      const firstEnergyOnMonth = energysOnMonth[0];
+      const lastEnergyOnMonth = energysOnMonth[energysOnMonth.length - 1];
+      const sumIncreasement = energyChanges.reduce((acc, energyChange) => {
+        const { preValue, curValue, datetime } = energyChange;
+        return datetime >= firstEnergyOnMonth.createdAt &&
+          datetime <= lastEnergyOnMonth.updatedAt
+          ? acc + curValue - preValue
+          : acc;
+      }, 0);
+      const value =
+        lastEnergyOnMonth.lastValue -
+        firstEnergyOnMonth.firstValue -
+        sumIncreasement;
+      const energyByMonth = value > 0 ? toFloat2(value) : 0;
+      maxByMonth = maxByMonth < energyByMonth ? energyByMonth : maxByMonth;
+      minByMonth = minByMonth > energyByMonth ? energyByMonth : minByMonth;
+      sum = toFloat2(sum + value);
+      energysByYear.push({ month: i, energyByMonth });
+    }
+    const averageByMonth = months > 0 ? toFloat2(sum / months) : 0;
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      energysByYear,
+      maxByMonth,
+      minByMonth,
+      averageByMonth,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
 // Sửa tên công tơ
 const renameEm = async (req, res) => {
   try {
@@ -664,10 +798,10 @@ const createData = async (req, res) => {
   try {
     const electricMeterId = "SMR-64B708A0E22C";
     let sum = 0;
-    for (let i = 1; i <= 1440 * 30; i++) {
+    for (let i = 1; i <= 1440 * 30 * 12; i++) {
       const random = Number.parseFloat(Math.random().toFixed(2));
       sum = Number.parseFloat((sum + random).toFixed(2));
-      const datetime = new Date(2022, 4, 1, 0, i);
+      const datetime = new Date(2021, 3, 1, 0, i);
       const hour = datetime.getHours();
       const energy = await findEnergy({
         electricMeterId,
@@ -720,6 +854,7 @@ module.exports = {
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
+  viewReportByYear,
   renameEm,
   moveToRoom,
   getAccountSharedList,
