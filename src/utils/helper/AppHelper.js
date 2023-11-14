@@ -3,6 +3,8 @@ const {
   UPDATE_FIRMWARE_NUMBER,
   UPDATE_FIRMWARE,
   TYPE_CONNECT,
+  TIMER_ACTION,
+  TIMER_ACTION_ID,
 } = require("../../config/constant/constant_model");
 const handleUpdateFirmware = (update) => {
   switch (update) {
@@ -36,4 +38,15 @@ const toFloat2 = (value) => {
   return Number.parseFloat(value.toFixed(2));
 };
 
-module.exports = { handleUpdateFirmware, handleConn, toFloat2 };
+const handleAction = (actionId) => {
+  switch (actionId) {
+    case TIMER_ACTION_ID.on:
+      return TIMER_ACTION.on;
+    case TIMER_ACTION_ID.off:
+      return TIMER_ACTION.off;
+    default:
+      return TIMER_ACTION.off;
+  }
+};
+
+module.exports = { handleUpdateFirmware, handleConn, toFloat2, handleAction };

@@ -18,12 +18,13 @@ const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
-const { toFloat2 } = require("../utils/helper/AppHelper");
+const { toFloat2, handleAction } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const {
   ROLE_EM,
+  TIMER_ACTION,
   TIMER_ACTION_ID,
 } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
@@ -444,13 +445,28 @@ const addTimer = async (req, res) => {
     });
     return responseSuccess(res, ResponseStatus.CREATED, {
       timers: [
+        { action: handleAction(actionId), time, daily },
         ...allTimers.map((timer) => {
-          delete timer.timerId;
-          delete timer.electricMeterId;
-          return timer;
+          const { actionId, time, daily } = timer;
+          return { action: handleAction(actionId), time, daily };
         }),
-        { actionId, time, daily },
       ],
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
+// lấy ra tất cả lịch trình
+const getAllTimers = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    const timers = await getTimersByEMId({ electricMeterId });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      timers: timers.map((timer) => {
+        const { actionId, time, daily } = timer;
+        return { action: handleAction(actionId), time, daily };
+      }),
     });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
@@ -851,6 +867,7 @@ module.exports = {
   rejectEMShare,
   getEms,
   addTimer,
+  getAllTimers,
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
