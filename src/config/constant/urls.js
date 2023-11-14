@@ -9,6 +9,7 @@ module.exports.URL_EM = {
   detailEm: "/detail",
   controlEm: "/control",
   restartEm: "/restart",
+  scanWifi: "/scan-wifi",
   viewReportByDay: "/view-report-by-day",
   viewReportByMonth: "/view-report-by-month",
   viewReportByYear: "/view-report-by-year",

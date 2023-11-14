@@ -637,6 +637,7 @@ const viewDetailEm = async (req, res) => {
   }
 };
 
+// Bật tắt công tơ
 const controlEm = async (req, res) => {
   try {
     const { electricMeterId } = req.em;
@@ -655,12 +656,28 @@ const controlEm = async (req, res) => {
   }
 };
 
+// Khởi động lại công tơ
 const restartEm = async (req, res) => {
   try {
     const { electricMeterId } = req.em;
     await publish({
       electricMeterId,
       command: REQUEST_COMAND.RESTART,
+      data: {},
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+  }
+};
+
+//Scan wifi gần công tơ
+const scanWifi = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.SCAN_WIFI,
       data: {},
     });
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
@@ -1057,6 +1074,7 @@ module.exports = {
   viewDetailEm,
   controlEm,
   restartEm,
+  scanWifi,
   viewReportByDay,
   viewReportByMonth,
   viewReportByYear,

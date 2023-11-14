@@ -7,6 +7,7 @@ const client = mqtt.connect(brokerUrl, {
   clean: true,
   connectTimeout: 10000,
   reconnectPeriod: 2000,
+  keepalive: 100,
 });
 
 module.exports = client;

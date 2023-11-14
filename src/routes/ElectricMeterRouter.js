@@ -19,6 +19,7 @@ const {
   viewDetailEm,
   controlEm,
   restartEm,
+  scanWifi,
   viewReportByDay,
   viewReportByMonth,
   viewReportByYear,
@@ -92,6 +93,12 @@ ElectricMeterRouter.put(
   URL_EM.restartEm,
   [authMiddleware, permisionEmMiddleware],
   restartEm
+);
+
+ElectricMeterRouter.get(
+  URL_EM.scanWifi,
+  [authMiddleware, permisionEmMiddleware],
+  scanWifi
 );
 
 ElectricMeterRouter.get(

@@ -20,6 +20,7 @@ API_WITH_EM_ROLE[URL_EM.detailEm] = [
 
 API_WITH_EM_ROLE[URL_EM.controlEm] = [EM_ROLES.enable_control, EM_ROLES.owner];
 API_WITH_EM_ROLE[URL_EM.restartEm] = [EM_ROLES.enable_control, EM_ROLES.owner];
+API_WITH_EM_ROLE[URL_EM.scanWifi] = [EM_ROLES.owner];
 
 API_WITH_EM_ROLE[URL_EM.viewReportByDay] = [
   EM_ROLES.read_only,
