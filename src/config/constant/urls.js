@@ -7,6 +7,8 @@ module.exports.URL_EM = {
   getEms: "/get-ems",
   deleteEm: "/delete",
   detailEm: "/detail",
+  controlEm: "/control",
+  restartEm: "/restart",
   viewReportByDay: "/view-report-by-day",
   viewReportByMonth: "/view-report-by-month",
   viewReportByYear: "/view-report-by-year",
@@ -16,8 +18,8 @@ module.exports.URL_EM = {
   deleteTimers: "/delete-timers",
   moveToRoom: "/move",
   sharedList: "/share-list",
-  deleteShareAccount: "/delete-share-account",
   getAllNewscast: "/all-newscast",
+  deleteShareAccount: "/delete-share-account",
   changeEnergyValue: "/change-energy",
   createData: "/create-data",
 };

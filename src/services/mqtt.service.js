@@ -33,22 +33,28 @@ const onMessage = async (topic, payload) => {
   const { command, ...data } = message;
   const electricMeterId = topic.split("/")[1];
   const em = await findEMById(electricMeterId);
+  const {
+    ID,
+    Ver,
+    Net,
+    SimImei,
+    Conn,
+    Signal,
+    Strength,
+    Ssid,
+    Pass,
+    Rtc,
+    Voltage,
+    Current,
+    Power,
+    Energy,
+    Temp,
+    Load,
+    Update,
+  } = data;
   console.log(moment().format("LTS"), topic, message);
   switch (command) {
     case RESPONSE_COMAND.NEWSCAST:
-      const {
-        ID,
-        Conn,
-        Signal,
-        Strength,
-        Voltage,
-        Current,
-        Power,
-        Energy,
-        Temp,
-        Load,
-        Update,
-      } = data;
       if (em) {
         await updateEm({
           electricMeterId: ID,
@@ -129,7 +135,22 @@ const onMessage = async (topic, payload) => {
       }
       break;
     case RESPONSE_COMAND.INFOR_EM:
-      addEM(data);
+      if (em) {
+        updateEm({
+          electricMeterId,
+          ver: Ver,
+          net: Net,
+          simImei: SimImei,
+          conn: Conn,
+          signal: Signal,
+          strength: Strength,
+          ssid: Ssid,
+          pass: Pass,
+          rtc: Rtc,
+        });
+      } else {
+        addEM(data);
+      }
       break;
     case RESPONSE_COMAND.TIMER:
       const { Timeon, Dailyon, Timeoff, Dailyoff } = data;
@@ -158,6 +179,10 @@ const onMessage = async (topic, payload) => {
       }
       await deleteAllTimers(electricMeterId);
       createTimers(timers);
+      break;
+    case RESPONSE_COMAND.RESTART:
+      const { Status } = command;
+      updateEm({ load: Status });
       break;
     default:
   }

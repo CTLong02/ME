@@ -17,6 +17,10 @@ API_WITH_EM_ROLE[URL_EM.detailEm] = [
   EM_ROLES.enable_control,
   EM_ROLES.owner,
 ];
+
+API_WITH_EM_ROLE[URL_EM.controlEm] = [EM_ROLES.enable_control, EM_ROLES.owner];
+API_WITH_EM_ROLE[URL_EM.restartEm] = [EM_ROLES.enable_control, EM_ROLES.owner];
+
 API_WITH_EM_ROLE[URL_EM.viewReportByDay] = [
   EM_ROLES.read_only,
   EM_ROLES.enable_control,

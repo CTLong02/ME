@@ -167,7 +167,7 @@ const updateEm = async ({
     em.power = power ? power : em.power;
     em.energy = energy ? energy : em.energy;
     em.temp = temp ? temp : em.temp;
-    em.load = load ? load : em.load;
+    em.load = load === 0 || load === 1 ? load : em.load;
     em.updateState = updateState ? updateState : em.updateState;
     em.ssid = ssid ? ssid : em.ssid;
     em.pass = pass ? pass : em.pass;

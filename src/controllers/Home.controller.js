@@ -54,4 +54,4 @@ const renameHome = async (req, res) => {
   }
 };
 
-module.exports = { getHomes, renameHome, addHome };
+module.exports = { renameHome, addHome };

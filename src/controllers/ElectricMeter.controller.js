@@ -637,6 +637,38 @@ const viewDetailEm = async (req, res) => {
   }
 };
 
+const controlEm = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    const { load } = req.body;
+    if (load !== 0 && load !== 1) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.CONTROL,
+      data: { Status: load },
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+  }
+};
+
+const restartEm = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.RESTART,
+      data: {},
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, {});
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+  }
+};
+
 // Báo cáo công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
@@ -1023,6 +1055,8 @@ module.exports = {
   updateTimer,
   deleteTimer,
   viewDetailEm,
+  controlEm,
+  restartEm,
   viewReportByDay,
   viewReportByMonth,
   viewReportByYear,
