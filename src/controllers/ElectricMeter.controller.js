@@ -24,7 +24,6 @@ const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const {
   ROLE_EM,
-  TIMER_ACTION,
   TIMER_ACTION_ID,
 } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
@@ -395,7 +394,6 @@ const getEms = async (req, res) => {
   }
 };
 
-//Thêm lịch tình
 const addTimer = async (req, res) => {
   try {
     const { electricMeterId } = req.em;
@@ -683,6 +681,7 @@ const viewReportByYear = async (req, res) => {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
+
 // Sửa tên công tơ
 const renameEm = async (req, res) => {
   try {
