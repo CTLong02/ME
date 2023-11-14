@@ -12,6 +12,8 @@ module.exports.URL_EM = {
   viewReportByYear: "/view-report-by-year",
   addTimer: "/add-timer",
   getAllTimers: "/get-all-timers",
+  updateTimer: "/update-timer",
+  deleteTimer: "/delete-timer",
   moveToRoom: "/move",
   sharedList: "/share-list",
   deleteShareAccount: "/delete-share-account",

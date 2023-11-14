@@ -23,6 +23,17 @@ const getTimersByEMId = async ({ electricMeterId }) => {
   }
 };
 
+const findTimer = async ({ electricMeterId, actionId, time, daily }) => {
+  try {
+    const timer = await Timer.findOne({
+      where: { electricMeterId, actionId, time, daily },
+    });
+    return timer ? timer : null;
+  } catch (error) {
+    return null;
+  }
+};
+
 const createTimers = async (data) => {
   try {
     const timers = await Timer.bulkCreate(data);
@@ -41,4 +52,10 @@ const deleteTimers = async (electricMeterId) => {
   }
 };
 
-module.exports = { createTimer, getTimersByEMId, createTimers, deleteTimers };
+module.exports = {
+  createTimer,
+  getTimersByEMId,
+  createTimers,
+  deleteTimers,
+  findTimer,
+};

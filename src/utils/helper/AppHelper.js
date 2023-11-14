@@ -38,6 +38,10 @@ const toFloat2 = (value) => {
   return Number.parseFloat(value.toFixed(2));
 };
 
+const toInt = (value) => {
+  return Number.parseInt(value.toString());
+};
+
 const handleAction = (actionId) => {
   switch (actionId) {
     case TIMER_ACTION_ID.on:
@@ -49,4 +53,10 @@ const handleAction = (actionId) => {
   }
 };
 
-module.exports = { handleUpdateFirmware, handleConn, toFloat2, handleAction };
+module.exports = {
+  handleUpdateFirmware,
+  handleConn,
+  toFloat2,
+  toInt,
+  handleAction,
+};

@@ -18,12 +18,13 @@ const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
-const { toFloat2, handleAction } = require("../utils/helper/AppHelper");
+const { toFloat2, toInt, handleAction } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
 const {
   ROLE_EM,
+  TIMER_ACTION,
   TIMER_ACTION_ID,
 } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
@@ -65,7 +66,7 @@ const {
   getAccountSharedListByEMId,
 } = require("../services/ElectricMeter.service");
 const { getAllInfor } = require("../services/Account.service");
-const { createTimer, getTimersByEMId } = require("../services/Timer.service");
+const { findTimer, getTimersByEMId } = require("../services/Timer.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -394,15 +395,16 @@ const getEms = async (req, res) => {
   }
 };
 
+// Thêm lịch trình
 const addTimer = async (req, res) => {
   try {
     const { electricMeterId } = req.em;
-    const { actionId, time, daily } = req.body;
+    const { action, time, daily } = req.body;
     if (!time || !daily) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
     }
     if (
-      !Object.values(TIMER_ACTION_ID).includes(actionId) ||
+      !Object.values(TIMER_ACTION).includes(action) ||
       time < 0 ||
       time > TIME.Time_MAX_ON_DAY ||
       daily < 0 ||
@@ -424,7 +426,7 @@ const addTimer = async (req, res) => {
         dailyOff.push(timer.daily);
       }
     });
-    if (actionId === TIMER_ACTION_ID.on) {
+    if (action === TIMER_ACTION.on) {
       timeOn.push(time);
       dailyOn.push(daily);
     } else {
@@ -443,7 +445,7 @@ const addTimer = async (req, res) => {
     });
     return responseSuccess(res, ResponseStatus.CREATED, {
       timers: [
-        { action: handleAction(actionId), time, daily },
+        { action, time, daily },
         ...allTimers.map((timer) => {
           const { actionId, time, daily } = timer;
           return { action: handleAction(actionId), time, daily };
@@ -466,6 +468,94 @@ const getAllTimers = async (req, res) => {
         return { action: handleAction(actionId), time, daily };
       }),
     });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
+// Cập nhật lịch trình
+const updateTimer = async (req, res) => {
+  try {
+    const { electricMeterId } = req.em;
+    const { action, time, daily } = req.query;
+    const iTime = toInt(time);
+    const iDaily = toInt(daily);
+    const newAcion = req.body.action;
+    const newTime = req.body.time;
+    const newDaily = req.body.daily;
+    if (
+      (newAcion && !Object.values(TIMER_ACTION).includes(action)) ||
+      (newTime &&
+        (!Number.isInteger(newTime) ||
+          newTime < 0 ||
+          newTime > TIME.Time_MAX_ON_DAY)) ||
+      (newDaily &&
+        (!Number.isInteger(newDaily) || newDaily < 0 || newDaily > 128))
+    ) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    }
+
+    const findedTimer = await findTimer({
+      electricMeterId,
+      actionId: TIMER_ACTION_ID[action],
+      time,
+      daily,
+    });
+    if (!findedTimer) {
+      return responseFailed(
+        res,
+        ResponseStatus.NOT_FOUND,
+        "Không tìm thấy lịch trình"
+      );
+    }
+    const newTimer = {
+      timerId: findedTimer.dataValues.timerId,
+      actionId: newAcion ? TIMER_ACTION_ID[newAcion] : action,
+      time: newTime ? newTime : iTime,
+      daily: newDaily ? newDaily : iDaily,
+    };
+    const timers = await getTimersByEMId({ electricMeterId });
+    const index = timers.findIndex(
+      (timer) => timer.timerId === findedTimer.dataValues.timerId
+    );
+    timers[index] = newTimer;
+    const timeOn = [];
+    const timeOff = [];
+    const dailyOn = [];
+    const dailyOff = [];
+    timers.forEach((timer) => {
+      if (timer.actionId === TIMER_ACTION_ID.on) {
+        timeOn.push(timer.time);
+        dailyOn.push(timer.daily);
+      } else if (timer.actionId === TIMER_ACTION_ID.off) {
+        timeOff.push(timer.time);
+        dailyOff.push(timer.daily);
+      }
+    });
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.TIMER,
+      data: {
+        Timeon: timeOn,
+        Dailyon: dailyOn,
+        Timeoff: timeOff,
+        Dailyoff: dailyOff,
+      },
+    });
+    const timer = { action: handleAction(newTimer.actionId), ...newTimer };
+    delete timer.actionId;
+    delete timer.timerId;
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
+      timer,
+    });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
+// Xóa lịch trình
+const deleteTimer = async (req, res) => {
+  try {
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
@@ -867,6 +957,8 @@ module.exports = {
   getEms,
   addTimer,
   getAllTimers,
+  updateTimer,
+  deleteTimer,
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,

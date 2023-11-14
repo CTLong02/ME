@@ -14,6 +14,8 @@ const {
   getEms,
   addTimer,
   getAllTimers,
+  updateTimer,
+  deleteTimer,
   viewDetailEm,
   viewReportByDay,
   viewReportByMonth,
@@ -58,6 +60,18 @@ ElectricMeterRouter.get(
   URL_EM.getAllTimers,
   [authMiddleware, permisionEmMiddleware],
   getAllTimers
+);
+
+ElectricMeterRouter.put(
+  URL_EM.updateTimer,
+  [authMiddleware, permisionEmMiddleware],
+  updateTimer
+);
+
+ElectricMeterRouter.delete(
+  URL_EM.deleteTimer,
+  [authMiddleware, permisionEmMiddleware],
+  deleteTimer
 );
 
 ElectricMeterRouter.get(
