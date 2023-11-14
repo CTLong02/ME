@@ -13,7 +13,7 @@ module.exports.URL_EM = {
   addTimer: "/add-timer",
   getAllTimers: "/get-all-timers",
   updateTimer: "/update-timer",
-  deleteTimer: "/delete-timer",
+  deleteTimers: "/delete-timers",
   moveToRoom: "/move",
   sharedList: "/share-list",
   deleteShareAccount: "/delete-share-account",

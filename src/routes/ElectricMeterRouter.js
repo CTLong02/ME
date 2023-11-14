@@ -69,7 +69,7 @@ ElectricMeterRouter.put(
 );
 
 ElectricMeterRouter.delete(
-  URL_EM.deleteTimer,
+  URL_EM.deleteTimers,
   [authMiddleware, permisionEmMiddleware],
   deleteTimer
 );

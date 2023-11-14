@@ -412,6 +412,19 @@ const addTimer = async (req, res) => {
     ) {
       return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
     }
+    const timer = await findTimer({
+      electricMeterId,
+      actionId: TIMER_ACTION_ID[action],
+      time,
+      daily,
+    });
+    if (timer) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Lịch trình đã tồn tại"
+      );
+    }
     const allTimers = await getTimersByEMId({ electricMeterId });
     const timeOn = [];
     const timeOff = [];
@@ -453,7 +466,7 @@ const addTimer = async (req, res) => {
       ],
     });
   } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
   }
 };
 
@@ -508,12 +521,23 @@ const updateTimer = async (req, res) => {
         "Không tìm thấy lịch trình"
       );
     }
+
     const newTimer = {
       timerId: findedTimer.dataValues.timerId,
-      actionId: newAcion ? TIMER_ACTION_ID[newAcion] : action,
+      actionId: newAcion ? TIMER_ACTION_ID[newAcion] : TIMER_ACTION_ID[action],
       time: newTime ? newTime : iTime,
       daily: newDaily ? newDaily : iDaily,
     };
+
+    const findedNewTimer = await findTimer({ electricMeterId, ...newTimer });
+    if (findedNewTimer) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_REQUEST,
+        "Lịch trình này đã tồn tại"
+      );
+    }
+
     const timers = await getTimersByEMId({ electricMeterId });
     const index = timers.findIndex(
       (timer) => timer.timerId === findedTimer.dataValues.timerId
@@ -549,15 +573,54 @@ const updateTimer = async (req, res) => {
       timer,
     });
   } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
   }
 };
 
 // Xóa lịch trình
 const deleteTimer = async (req, res) => {
   try {
+    const { electricMeterId } = req.em;
+    const { timers } = req.body;
+    if (!timers || !Array.isArray(timers)) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    }
+    const handledTimers = timers.map((timer) => {
+      const { action, time, daily } = timer;
+      return { actionId: TIMER_ACTION_ID[action], time, daily };
+    });
+    const allTimers = await getTimersByEMId({ electricMeterId });
+    const newTimers = allTimers.filter((timer) => {
+      const { actionId, time, daily } = timer;
+      const json = JSON.stringify({ actionId, time, daily });
+      return !JSON.stringify(handledTimers).includes(json);
+    });
+    const timeOn = [];
+    const timeOff = [];
+    const dailyOn = [];
+    const dailyOff = [];
+    newTimers.forEach((timer) => {
+      if (timer.actionId === TIMER_ACTION_ID.on) {
+        timeOn.push(timer.time);
+        dailyOn.push(timer.daily);
+      } else if (timer.actionId === TIMER_ACTION_ID.off) {
+        timeOff.push(timer.time);
+        dailyOff.push(timer.daily);
+      }
+    });
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND.TIMER,
+      data: {
+        Timeon: timeOn,
+        Dailyon: dailyOn,
+        Timeoff: timeOff,
+        Dailyoff: dailyOff,
+      },
+    });
+    return responseSuccess(res, ResponseStatus.SUCCESS, { timers });
   } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
   }
 };
 

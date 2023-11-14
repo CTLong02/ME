@@ -12,7 +12,7 @@ const {
 
 const { addEM, findEMById, updateEm } = require("./ElectricMeter.service");
 const { createEnergy, findEnergy } = require("./Energy.service");
-const { createTimers, deleteTimers } = require("./Timer.service");
+const { createTimers, deleteAllTimers } = require("./Timer.service");
 const {
   createEnergyChange,
   getLastEnergyChange,
@@ -23,7 +23,8 @@ const publish = async ({ electricMeterId, command, data }) => {
   const topic = `SM_EL_MT/${electricMeterId}/sub`;
   const payload = JSON.stringify(message);
   if (client.connected) {
-    await client.publishAsync(topic, payload);
+    const result = await client.publishAsync(topic, payload);
+    console.log(result);
   }
 };
 
@@ -155,7 +156,7 @@ const onMessage = async (topic, payload) => {
           daily: Dailyoff[j],
         });
       }
-      await deleteTimers(electricMeterId);
+      await deleteAllTimers(electricMeterId);
       createTimers(timers);
       break;
     default:

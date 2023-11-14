@@ -1,3 +1,4 @@
+const { Op } = require("sequelize");
 const Timer = require("../models/Timer");
 
 const createTimer = async ({ electricMeterId, actionId, time, daily }) => {
@@ -43,9 +44,28 @@ const createTimers = async (data) => {
   }
 };
 
-const deleteTimers = async (electricMeterId) => {
+const deleteAllTimers = async (electricMeterId) => {
   try {
     const num = await Timer.destroy({ where: { electricMeterId } });
+    return num;
+  } catch (error) {
+    return null;
+  }
+};
+
+const deleteTimers = async ({ electricMeterId, timers }) => {
+  try {
+    const num = await Timer.destroy({
+      where: {
+        electricMeterId,
+        [Op.or]: [
+          ...timers.map((timer) => {
+            const { time, daily, actionId } = timer;
+            return { [Op.and]: [{ time }, { daily }, { actionId }] };
+          }),
+        ],
+      },
+    });
     return num;
   } catch (error) {
     return null;
@@ -56,6 +76,7 @@ module.exports = {
   createTimer,
   getTimersByEMId,
   createTimers,
+  deleteAllTimers,
   deleteTimers,
   findTimer,
 };

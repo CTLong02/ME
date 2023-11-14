@@ -20,7 +20,7 @@ createTable();
 const { onMessage } = require("./services/mqtt.service");
 const client = require("./config/mqtt/connect");
 client.on("connect", () => {
-  client.subscribe("SM_EL_MT/#", () => {});
+  client.subscribe("SM_EL_MT/#", { qos: 1 }, () => {});
 });
 
 client.on("message", (topic, payload) => {
