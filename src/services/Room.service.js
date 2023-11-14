@@ -86,7 +86,7 @@ const checkRoomBelongHome = async ({ roomId, homeId }) => {
 const getRoomsByHomeId = async (homeId) => {
   try {
     const rooms = await Room.findAll({ where: { homeId } });
-    return rooms;
+    return rooms ? rooms.map((room) => room.dataValues) : [];
   } catch (error) {
     return [];
   }

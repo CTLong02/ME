@@ -73,7 +73,6 @@ const getAllInfor = async ({ accountId, email, phoneNumber }) => {
               model: Room,
               attributes: { exclude: ["homeId"] },
               as: "rooms",
-              required: true,
               include: [
                 {
                   model: ElectricMeter,
