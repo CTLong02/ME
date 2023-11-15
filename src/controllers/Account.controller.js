@@ -15,6 +15,7 @@ const {
   deleteAccessToken,
 } = require("../services/Token.service");
 const { hashPw, comparePw } = require("../utils/helper/AccountHelper");
+const { createAccountDTO } = require("../utils/joi/account.joi");
 
 //Tạo tài khoản
 const signUp = async (req, res) => {
@@ -30,6 +31,14 @@ const signUp = async (req, res) => {
         ResponseStatus.BAD_REQUEST,
         "Tài khoản đã tồn tại"
       );
+    }
+    const isValidateParams = createAccountDTO.validate({
+      phoneNumber,
+      password,
+      email,
+    });
+    if (isValidateParams.error) {
+      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
     }
     const pass = password ? hashPw(password) : null;
     const createdAccount = await createAccount({ phoneNumber, pass, email });
