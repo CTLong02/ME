@@ -26,5 +26,5 @@ module.exports.REQUEST_COMAND_SOCKET = {
   DELETE_TIMER: "DELETE_TIMERS",
 };
 module.exports.RESPONSE_COMAND_SOCKET = {
-  ADD_TIMER: "SYS_TIMER",
+  TIMER: "SYS_TIMER",
 };

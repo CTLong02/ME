@@ -16,9 +16,18 @@ const {
   TIMER_ACTION,
 } = require("../config/constant/constant_model");
 
-const { schemaTimer, handleAction } = require("../utils/helper/AppHelper");
+const { handleAction } = require("../utils/helper/AppHelper");
+const {
+  createTimerDTO,
+  updateTimerDTO,
+  deleteTimersDTO,
+} = require("../utils/joi/timer.joi");
 
-const { findTimer, getTimersByEMId } = require("../services/Timer.service");
+const {
+  findTimer,
+  getTimersByEMId,
+  findedTimerById,
+} = require("../services/Timer.service");
 const { publish } = require("./mqtt.service");
 
 const webSocketServer = new WebSocketServer({ noServer: true, path: "/ws" });
@@ -39,11 +48,27 @@ const socketService = (server) => {
 
   webSocketServer.addListener("connection", (websocket, request) => {
     websocket.on("message", (data, isBinary) => {
-      const { command, ...message } = JSON.parse(data.toString());
+      const { command, electricMeterId, ...message } = JSON.parse(
+        data.toString()
+      );
+      const { action, time, daily } = message;
       switch (command) {
         case REQUEST_COMAND_SOCKET.ADD_TIMER:
-          const { electricMeterId, action, time, daily } = message;
           addTimer({ websocket, electricMeterId, action, time, daily });
+          break;
+        case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
+          const { timerId } = message;
+          updateTimer({
+            websocket,
+            electricMeterId,
+            timerId,
+            action,
+            time,
+            daily,
+          });
+        case REQUEST_COMAND_SOCKET.DELETE_TIMER:
+          const { timerIds } = message;
+          deleteTimer({ websocket, electricMeterId, timerIds });
           break;
         default:
       }
@@ -60,11 +85,11 @@ const addTimer = async ({
   daily,
 }) => {
   try {
-    const result = schemaTimer.validate({ action, time, daily });
+    const result = createTimerDTO.validate({ action, time, daily });
     if (result.error) {
       sendMessageFailed({
         websocket,
-        command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
+        command: RESPONSE_COMAND_SOCKET.TIMER,
         reason: "Thiếu tham số",
       });
       return;
@@ -91,7 +116,7 @@ const addTimer = async ({
       timeOff.push(time);
       dailyOff.push(daily);
     }
-    publish({
+    await publish({
       electricMeterId,
       command: REQUEST_COMAND_MQTT.TIMER,
       data: {
@@ -105,7 +130,7 @@ const addTimer = async ({
   } catch (error) {
     sendMessageFailed({
       websocket,
-      command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
+      command: RESPONSE_COMAND_SOCKET.TIMER,
       reason: "Thiếu tham số",
     });
     return;
@@ -113,61 +138,44 @@ const addTimer = async ({
 };
 
 // Cập nhật lịch trình
-const updateTimer = async (req, res) => {
+const updateTimer = async ({
+  websocket,
+  electricMeterId,
+  timerId,
+  action,
+  time,
+  daily,
+}) => {
   try {
-    const { electricMeterId } = req.em;
-    const { action, time, daily } = req.query;
-    const iTime = toInt(time);
-    const iDaily = toInt(daily);
-    const newAcion = req.body.action;
-    const newTime = req.body.time;
-    const newDaily = req.body.daily;
-    if (
-      (newAcion && !Object.values(TIMER_ACTION).includes(action)) ||
-      (newTime &&
-        (!Number.isInteger(newTime) ||
-          newTime < 0 ||
-          newTime > TIME.Time_MAX_ON_DAY)) ||
-      (newDaily &&
-        (!Number.isInteger(newDaily) || newDaily < 0 || newDaily > 128))
-    ) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
+    const findedTimer = await findedTimerById(timerId);
+    if (!findedTimer) {
+      sendMessageFailed({
+        websocket,
+        command: REQUEST_COMAND_MQTT.TIMER,
+        reason: "Không tìm thấy lịch trình",
+      });
+      return;
     }
 
-    const findedTimer = await findTimer({
-      electricMeterId,
-      actionId: TIMER_ACTION_ID[action],
-      time,
-      daily,
-    });
-    if (!findedTimer) {
-      return responseFailed(
-        res,
-        ResponseStatus.NOT_FOUND,
-        "Không tìm thấy lịch trình"
-      );
+    const result = updateTimerDTO.validate({ action, time, daily });
+    if (result.error) {
+      sendMessageFailed({
+        websocket,
+        command: REQUEST_COMAND_MQTT.TIMER,
+        reason: "Thiếu tham số",
+      });
+      return;
     }
 
     const newTimer = {
-      timerId: findedTimer.dataValues.timerId,
-      actionId: newAcion ? TIMER_ACTION_ID[newAcion] : TIMER_ACTION_ID[action],
-      time: newTime ? newTime : iTime,
-      daily: newDaily ? newDaily : iDaily,
+      timerId,
+      actionId: action ? TIMER_ACTION_ID[action] : findedTimer.actionId,
+      time: time ? time : findedTimer.time,
+      daily: daily ? daily : findedTimer.daily,
     };
 
-    const findedNewTimer = await findTimer({ electricMeterId, ...newTimer });
-    if (findedNewTimer) {
-      return responseFailed(
-        res,
-        ResponseStatus.BAD_REQUEST,
-        "Lịch trình này đã tồn tại"
-      );
-    }
-
     const timers = await getTimersByEMId({ electricMeterId });
-    const index = timers.findIndex(
-      (timer) => timer.timerId === findedTimer.dataValues.timerId
-    );
+    const index = timers.findIndex((timer) => timer.timerId === timerId);
     timers[index] = newTimer;
     const timeOn = [];
     const timeOff = [];
@@ -192,34 +200,45 @@ const updateTimer = async (req, res) => {
         Dailyoff: dailyOff,
       },
     });
-    const timer = { action: handleAction(newTimer.actionId), ...newTimer };
-    delete timer.actionId;
-    delete timer.timerId;
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
-      timer,
-    });
+    return;
   } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+    sendMessageFailed({
+      websocket,
+      command: REQUEST_COMAND_MQTT.TIMER,
+      reason: "Xảy ra lỗi",
+    });
+    return;
   }
 };
 
 // Xóa lịch trình
-const deleteTimer = async (req, res) => {
+const deleteTimer = async ({ websocket, electricMeterId, timerIds }) => {
   try {
-    const { electricMeterId } = req.em;
-    const { timers } = req.body;
-    if (!timers || !Array.isArray(timers)) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    if (!timerIds || !Array.isArray(timerIds)) {
+      sendMessageFailed({
+        websocket,
+        command: RESPONSE_COMAND_SOCKET.TIMER,
+        reason: "Thiếu tham số",
+      });
+      return;
     }
-    const handledTimers = timers.map((timer) => {
-      const { action, time, daily } = timer;
-      return { actionId: TIMER_ACTION_ID[action], time, daily };
+
+    const isTimerIds = timerIds.every((timerId) => {
+      const result = deleteTimersDTO.validate({ timerId });
+      return !result.error;
     });
+    if (!isTimerIds) {
+      sendMessageFailed({
+        websocket,
+        command: RESPONSE_COMAND_SOCKET.TIMER,
+        reason: "Thiếu tham số",
+      });
+      return;
+    }
     const allTimers = await getTimersByEMId({ electricMeterId });
     const newTimers = allTimers.filter((timer) => {
-      const { actionId, time, daily } = timer;
-      const json = JSON.stringify({ actionId, time, daily });
-      return !JSON.stringify(handledTimers).includes(json);
+      const { timerId } = timer;
+      return !timerIds.includes(timerId);
     });
     const timeOn = [];
     const timeOff = [];
@@ -244,9 +263,13 @@ const deleteTimer = async (req, res) => {
         Dailyoff: dailyOff,
       },
     });
-    return responseSuccess(res, ResponseStatus.SUCCESS, { timers });
   } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
+    sendMessageFailed({
+      websocket,
+      command: RESPONSE_COMAND_SOCKET.TIMER,
+      reason: "Thiếu tham số",
+    });
+    return;
   }
 };
 

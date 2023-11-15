@@ -398,8 +398,8 @@ const getAllTimers = async (req, res) => {
     const timers = await getTimersByEMId({ electricMeterId });
     return responseSuccess(res, ResponseStatus.SUCCESS, {
       timers: timers.map((timer) => {
-        const { actionId, time, daily } = timer;
-        return { action: handleAction(actionId), time, daily };
+        const { timerId, actionId, time, daily } = timer;
+        return { timerId, action: handleAction(actionId), time, daily };
       }),
     });
   } catch (error) {

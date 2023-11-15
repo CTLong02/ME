@@ -72,6 +72,15 @@ const deleteTimers = async ({ electricMeterId, timers }) => {
   }
 };
 
+const findedTimerById = async (timerId) => {
+  try {
+    const timer = await Timer.findOne({ where: { timerId } });
+    return timer;
+  } catch (error) {
+    return null;
+  }
+};
+
 module.exports = {
   createTimer,
   getTimersByEMId,
@@ -79,4 +88,5 @@ module.exports = {
   deleteAllTimers,
   deleteTimers,
   findTimer,
+  findedTimerById,
 };

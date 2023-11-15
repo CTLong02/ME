@@ -1,5 +1,3 @@
-const Joi = require("joi");
-const { TIME_MAX_ON_DAY } = require("../../config/constant/constant_time");
 const {
   TYPE_CONNECT_NUMBER,
   UPDATE_FIRMWARE_NUMBER,
@@ -55,18 +53,10 @@ const handleAction = (actionId) => {
   }
 };
 
-const schemaTimer = Joi.object({
-  action: Joi.string()
-    .valid(...Object.values(TIMER_ACTION))
-    .required(),
-  time: Joi.number().integer().min(0).max(TIME_MAX_ON_DAY).required(),
-  daily: Joi.number().integer().min(1).max(128).required(),
-});
 module.exports = {
   handleUpdateFirmware,
   handleConn,
   toFloat2,
   toInt,
   handleAction,
-  schemaTimer,
 };

@@ -29,7 +29,6 @@ Timer.init(
       { fields: ["electricMeterId", "actionId"] },
       {
         fields: ["electricMeterId", "actionId", "time", "daily"],
-        unique: true,
       },
     ],
   }
