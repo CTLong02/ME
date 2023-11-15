@@ -89,7 +89,7 @@ const addTimer = async ({
     if (result.error) {
       sendMessageFailed({
         websocket,
-        command: RESPONSE_COMAND_SOCKET.TIMER,
+        command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
         reason: "Thiếu tham số",
       });
       return;
@@ -130,7 +130,7 @@ const addTimer = async ({
   } catch (error) {
     sendMessageFailed({
       websocket,
-      command: RESPONSE_COMAND_SOCKET.TIMER,
+      command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
       reason: "Thiếu tham số",
     });
     return;
@@ -151,7 +151,7 @@ const updateTimer = async ({
     if (!findedTimer) {
       sendMessageFailed({
         websocket,
-        command: REQUEST_COMAND_MQTT.TIMER,
+        command: RESPONSE_COMAND_SOCKET.UPDATE_TIMER,
         reason: "Không tìm thấy lịch trình",
       });
       return;
@@ -161,7 +161,7 @@ const updateTimer = async ({
     if (result.error) {
       sendMessageFailed({
         websocket,
-        command: REQUEST_COMAND_MQTT.TIMER,
+        command: RESPONSE_COMAND_SOCKET.UPDATE_TIMER,
         reason: "Thiếu tham số",
       });
       return;
@@ -204,7 +204,7 @@ const updateTimer = async ({
   } catch (error) {
     sendMessageFailed({
       websocket,
-      command: REQUEST_COMAND_MQTT.TIMER,
+      command: RESPONSE_COMAND_SOCKET.UPDATE_TIMER,
       reason: "Xảy ra lỗi",
     });
     return;
@@ -217,7 +217,7 @@ const deleteTimer = async ({ websocket, electricMeterId, timerIds }) => {
     if (!timerIds || !Array.isArray(timerIds)) {
       sendMessageFailed({
         websocket,
-        command: RESPONSE_COMAND_SOCKET.TIMER,
+        command: RESPONSE_COMAND_SOCKET.DELETE_TIMER,
         reason: "Thiếu tham số",
       });
       return;
@@ -230,7 +230,7 @@ const deleteTimer = async ({ websocket, electricMeterId, timerIds }) => {
     if (!isTimerIds) {
       sendMessageFailed({
         websocket,
-        command: RESPONSE_COMAND_SOCKET.TIMER,
+        command: RESPONSE_COMAND_SOCKET.DELETE_TIMER,
         reason: "Thiếu tham số",
       });
       return;
@@ -266,7 +266,7 @@ const deleteTimer = async ({ websocket, electricMeterId, timerIds }) => {
   } catch (error) {
     sendMessageFailed({
       websocket,
-      command: RESPONSE_COMAND_SOCKET.TIMER,
+      command: RRESPONSE_COMAND_SOCKET.DELETE_TIMER,
       reason: "Thiếu tham số",
     });
     return;
