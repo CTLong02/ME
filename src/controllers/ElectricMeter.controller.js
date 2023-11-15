@@ -22,13 +22,9 @@ const { toFloat2, toInt, handleAction } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
-const {
-  ROLE_EM,
-  TIMER_ACTION,
-  TIMER_ACTION_ID,
-} = require("../config/constant/constant_model");
+const { ROLE_EM } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
-const { REQUEST_COMAND } = require("../config/constant/command");
+const { REQUEST_COMAND_MQTT } = require("../config/constant/command");
 
 const {
   createRoom,
@@ -66,7 +62,7 @@ const {
   getAccountSharedListByEMId,
 } = require("../services/ElectricMeter.service");
 const { getAllInfor } = require("../services/Account.service");
-const { findTimer, getTimersByEMId } = require("../services/Timer.service");
+const { getTimersByEMId } = require("../services/Timer.service");
 
 // Thêm công tơ vào tài khoản
 const addEM = async (req, res) => {
@@ -395,81 +391,6 @@ const getEms = async (req, res) => {
   }
 };
 
-// Thêm lịch trình
-const addTimer = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    const { action, time, daily } = req.body;
-    if (!time || !daily) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    if (
-      !Object.values(TIMER_ACTION).includes(action) ||
-      time < 0 ||
-      time > TIME.Time_MAX_ON_DAY ||
-      daily < 0 ||
-      daily > 128
-    ) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
-    }
-    const timer = await findTimer({
-      electricMeterId,
-      actionId: TIMER_ACTION_ID[action],
-      time,
-      daily,
-    });
-    if (timer) {
-      return responseFailed(
-        res,
-        ResponseStatus.BAD_REQUEST,
-        "Lịch trình đã tồn tại"
-      );
-    }
-    const allTimers = await getTimersByEMId({ electricMeterId });
-    const timeOn = [];
-    const timeOff = [];
-    const dailyOn = [];
-    const dailyOff = [];
-    allTimers.forEach((timer) => {
-      if (timer.actionId === TIMER_ACTION_ID.on) {
-        timeOn.push(timer.time);
-        dailyOn.push(timer.daily);
-      } else if (timer.actionId === TIMER_ACTION_ID.off) {
-        timeOff.push(timer.time);
-        dailyOff.push(timer.daily);
-      }
-    });
-    if (action === TIMER_ACTION.on) {
-      timeOn.push(time);
-      dailyOn.push(daily);
-    } else {
-      timeOff.push(time);
-      dailyOff.push(daily);
-    }
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND.TIMER,
-      data: {
-        Timeon: timeOn,
-        Dailyon: dailyOn,
-        Timeoff: timeOff,
-        Dailyoff: dailyOff,
-      },
-    });
-    return responseSuccess(res, ResponseStatus.CREATED, {
-      timers: [
-        { action, time, daily },
-        ...allTimers.map((timer) => {
-          const { actionId, time, daily } = timer;
-          return { action: handleAction(actionId), time, daily };
-        }),
-      ],
-    });
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
-  }
-};
-
 // lấy ra tất cả lịch trình
 const getAllTimers = async (req, res) => {
   try {
@@ -483,144 +404,6 @@ const getAllTimers = async (req, res) => {
     });
   } catch (error) {
     return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-  }
-};
-
-// Cập nhật lịch trình
-const updateTimer = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    const { action, time, daily } = req.query;
-    const iTime = toInt(time);
-    const iDaily = toInt(daily);
-    const newAcion = req.body.action;
-    const newTime = req.body.time;
-    const newDaily = req.body.daily;
-    if (
-      (newAcion && !Object.values(TIMER_ACTION).includes(action)) ||
-      (newTime &&
-        (!Number.isInteger(newTime) ||
-          newTime < 0 ||
-          newTime > TIME.Time_MAX_ON_DAY)) ||
-      (newDaily &&
-        (!Number.isInteger(newDaily) || newDaily < 0 || newDaily > 128))
-    ) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Sai tham số");
-    }
-
-    const findedTimer = await findTimer({
-      electricMeterId,
-      actionId: TIMER_ACTION_ID[action],
-      time,
-      daily,
-    });
-    if (!findedTimer) {
-      return responseFailed(
-        res,
-        ResponseStatus.NOT_FOUND,
-        "Không tìm thấy lịch trình"
-      );
-    }
-
-    const newTimer = {
-      timerId: findedTimer.dataValues.timerId,
-      actionId: newAcion ? TIMER_ACTION_ID[newAcion] : TIMER_ACTION_ID[action],
-      time: newTime ? newTime : iTime,
-      daily: newDaily ? newDaily : iDaily,
-    };
-
-    const findedNewTimer = await findTimer({ electricMeterId, ...newTimer });
-    if (findedNewTimer) {
-      return responseFailed(
-        res,
-        ResponseStatus.BAD_REQUEST,
-        "Lịch trình này đã tồn tại"
-      );
-    }
-
-    const timers = await getTimersByEMId({ electricMeterId });
-    const index = timers.findIndex(
-      (timer) => timer.timerId === findedTimer.dataValues.timerId
-    );
-    timers[index] = newTimer;
-    const timeOn = [];
-    const timeOff = [];
-    const dailyOn = [];
-    const dailyOff = [];
-    timers.forEach((timer) => {
-      if (timer.actionId === TIMER_ACTION_ID.on) {
-        timeOn.push(timer.time);
-        dailyOn.push(timer.daily);
-      } else if (timer.actionId === TIMER_ACTION_ID.off) {
-        timeOff.push(timer.time);
-        dailyOff.push(timer.daily);
-      }
-    });
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND.TIMER,
-      data: {
-        Timeon: timeOn,
-        Dailyon: dailyOn,
-        Timeoff: timeOff,
-        Dailyoff: dailyOff,
-      },
-    });
-    const timer = { action: handleAction(newTimer.actionId), ...newTimer };
-    delete timer.actionId;
-    delete timer.timerId;
-    return responseSuccess(res, ResponseStatus.SUCCESS, {
-      timer,
-    });
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
-  }
-};
-
-// Xóa lịch trình
-const deleteTimer = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    const { timers } = req.body;
-    if (!timers || !Array.isArray(timers)) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    const handledTimers = timers.map((timer) => {
-      const { action, time, daily } = timer;
-      return { actionId: TIMER_ACTION_ID[action], time, daily };
-    });
-    const allTimers = await getTimersByEMId({ electricMeterId });
-    const newTimers = allTimers.filter((timer) => {
-      const { actionId, time, daily } = timer;
-      const json = JSON.stringify({ actionId, time, daily });
-      return !JSON.stringify(handledTimers).includes(json);
-    });
-    const timeOn = [];
-    const timeOff = [];
-    const dailyOn = [];
-    const dailyOff = [];
-    newTimers.forEach((timer) => {
-      if (timer.actionId === TIMER_ACTION_ID.on) {
-        timeOn.push(timer.time);
-        dailyOn.push(timer.daily);
-      } else if (timer.actionId === TIMER_ACTION_ID.off) {
-        timeOff.push(timer.time);
-        dailyOff.push(timer.daily);
-      }
-    });
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND.TIMER,
-      data: {
-        Timeon: timeOn,
-        Dailyon: dailyOn,
-        Timeoff: timeOff,
-        Dailyoff: dailyOff,
-      },
-    });
-    return responseSuccess(res, ResponseStatus.SUCCESS, { timers });
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
   }
 };
 
@@ -647,7 +430,7 @@ const controlEm = async (req, res) => {
     }
     await publish({
       electricMeterId,
-      command: REQUEST_COMAND.CONTROL,
+      command: REQUEST_COMAND_MQTT.CONTROL,
       data: { Status: load },
     });
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
@@ -662,7 +445,7 @@ const restartEm = async (req, res) => {
     const { electricMeterId } = req.em;
     await publish({
       electricMeterId,
-      command: REQUEST_COMAND.RESTART,
+      command: REQUEST_COMAND_MQTT.RESTART,
       data: {},
     });
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
@@ -677,7 +460,7 @@ const scanWifi = async (req, res) => {
     const { electricMeterId } = req.em;
     await publish({
       electricMeterId,
-      command: REQUEST_COMAND.SCAN_WIFI,
+      command: REQUEST_COMAND_MQTT.SCAN_WIFI,
       data: {},
     });
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
@@ -1002,7 +785,7 @@ const changeEnergyValue = async (req, res) => {
     const fValue = Number.parseFloat(value.toString());
     await publish({
       electricMeterId,
-      command: REQUEST_COMAND.CHANGE_EM,
+      command: REQUEST_COMAND_MQTT.CHANGE_EM,
       data: { value: fValue },
     });
     return responseSuccess(res, ResponseStatus.SUCCESS, {});
@@ -1067,10 +850,7 @@ module.exports = {
   acceptEmShare,
   rejectEMShare,
   getEms,
-  addTimer,
   getAllTimers,
-  updateTimer,
-  deleteTimer,
   viewDetailEm,
   controlEm,
   restartEm,

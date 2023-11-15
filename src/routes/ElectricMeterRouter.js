@@ -12,10 +12,7 @@ const {
   acceptEmShare,
   rejectEMShare,
   getEms,
-  addTimer,
   getAllTimers,
-  updateTimer,
-  deleteTimer,
   viewDetailEm,
   controlEm,
   restartEm,
@@ -53,28 +50,10 @@ ElectricMeterRouter.put(
 
 ElectricMeterRouter.get(URL_EM.getEms, [authMiddleware], getEms);
 
-ElectricMeterRouter.post(
-  URL_EM.addTimer,
-  [authMiddleware, permisionEmMiddleware],
-  addTimer
-);
-
 ElectricMeterRouter.get(
   URL_EM.getAllTimers,
   [authMiddleware, permisionEmMiddleware],
   getAllTimers
-);
-
-ElectricMeterRouter.put(
-  URL_EM.updateTimer,
-  [authMiddleware, permisionEmMiddleware],
-  updateTimer
-);
-
-ElectricMeterRouter.delete(
-  URL_EM.deleteTimers,
-  [authMiddleware, permisionEmMiddleware],
-  deleteTimer
 );
 
 ElectricMeterRouter.get(

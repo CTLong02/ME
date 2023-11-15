@@ -12,25 +12,22 @@ app.use(express.urlencoded({ extended: true }));
 const route = require("./routes");
 route(app);
 
-//connect db
+//connect database
 const { createTable } = require("./config/database/connect");
 createTable();
 
 //mqtt
-const { onMessage } = require("./services/mqtt.service");
-const client = require("./config/mqtt/connect");
-client.on("connect", () => {
-  client.subscribe("SM_EL_MT/#", { qos: 1 }, () => {});
-});
-
-client.on("message", (topic, payload) => {
-  onMessage(topic, payload);
-});
+const { MQTTClient } = require("./services/mqtt.service");
+MQTTClient();
 
 app.get("/", (req, res) => {
   res.send("Hello world!");
 });
 
-app.listen(process.env.PORT, () => {
+const server = app.listen(process.env.PORT, () => {
   console.log(`SERVER STARTED ${process.env.PORT}`);
 });
+
+// websocket
+const { socketService } = require("./services/socket.service");
+socketService(server);

@@ -3,7 +3,10 @@ const moment = require("moment");
 
 const client = require("../config/mqtt/connect");
 
-const { RESPONSE_COMAND } = require("../config/constant/command");
+const {
+  RESPONSE_COMAND_MQTT,
+  RESPONSE_COMAND_SOCKET,
+} = require("../config/constant/command");
 const { TIMER_ACTION_ID } = require("../config/constant/constant_model");
 const {
   handleConn,
@@ -18,13 +21,22 @@ const {
   getLastEnergyChange,
 } = require("./EnergyChange.service");
 
+const MQTTClient = () => {
+  client.on("connect", () => {
+    client.subscribe("SM_EL_MT/#", { qos: 1 }, () => {});
+  });
+
+  client.on("message", (topic, payload) => {
+    onMessage(topic, payload);
+  });
+};
+
 const publish = async ({ electricMeterId, command, data }) => {
   const message = { command, ...data };
   const topic = `SM_EL_MT/${electricMeterId}/sub`;
   const payload = JSON.stringify(message);
   if (client.connected) {
-    const result = await client.publishAsync(topic, payload);
-    console.log(result);
+    await client.publishAsync(topic, payload);
   }
 };
 
@@ -54,7 +66,7 @@ const onMessage = async (topic, payload) => {
   } = data;
   console.log(moment().format("LTS"), topic, message);
   switch (command) {
-    case RESPONSE_COMAND.NEWSCAST:
+    case RESPONSE_COMAND_MQTT.NEWSCAST:
       if (em) {
         await updateEm({
           electricMeterId: ID,
@@ -111,7 +123,7 @@ const onMessage = async (topic, payload) => {
         }
       }
       break;
-    case RESPONSE_COMAND.CHANGE_EM:
+    case RESPONSE_COMAND_MQTT.CHANGE_EM:
       const { value } = data;
       const lastEnergyChange = await getLastEnergyChange(electricMeterId);
       if (em) {
@@ -134,7 +146,7 @@ const onMessage = async (topic, payload) => {
         }
       }
       break;
-    case RESPONSE_COMAND.INFOR_EM:
+    case RESPONSE_COMAND_MQTT.INFOR_EM:
       if (em) {
         updateEm({
           electricMeterId,
@@ -152,7 +164,7 @@ const onMessage = async (topic, payload) => {
         addEM(data);
       }
       break;
-    case RESPONSE_COMAND.TIMER:
+    case RESPONSE_COMAND_MQTT.TIMER:
       const { Timeon, Dailyon, Timeoff, Dailyoff } = data;
       const timers = [];
       for (let i = 0; i < Timeon.length; i++) {
@@ -178,9 +190,9 @@ const onMessage = async (topic, payload) => {
         });
       }
       await deleteAllTimers(electricMeterId);
-      createTimers(timers);
+      await createTimers(timers);
       break;
-    case RESPONSE_COMAND.RESTART:
+    case RESPONSE_COMAND_MQTT.RESTART:
       const { Status } = command;
       updateEm({ load: Status });
       break;
@@ -188,4 +200,4 @@ const onMessage = async (topic, payload) => {
   }
 };
 
-module.exports = { onMessage, publish };
+module.exports = { onMessage, publish, MQTTClient };

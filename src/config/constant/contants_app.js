@@ -38,10 +38,7 @@ API_WITH_EM_ROLE[URL_EM.viewReportByYear] = [
   EM_ROLES.owner,
 ];
 
-API_WITH_EM_ROLE[URL_EM.addTimer] = [EM_ROLES.owner];
 API_WITH_EM_ROLE[URL_EM.getAllTimers] = [EM_ROLES.owner];
-API_WITH_EM_ROLE[URL_EM.updateTimer] = [EM_ROLES.owner];
-API_WITH_EM_ROLE[URL_EM.deleteTimers] = [EM_ROLES.owner];
 API_WITH_EM_ROLE[URL_EM.renameEm] = [EM_ROLES.owner];
 API_WITH_EM_ROLE[URL_EM.moveToRoom] = [
   EM_ROLES.read_only,

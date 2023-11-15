@@ -1,4 +1,4 @@
-module.exports.REQUEST_COMAND = {
+module.exports.REQUEST_COMAND_MQTT = {
   TIMER: "ARLARM",
   CONTROL: "RELAY",
   UPDATE_FIRMWARE: "update-firmware",
@@ -9,7 +9,7 @@ module.exports.REQUEST_COMAND = {
   CHANGE_EM: "ENERGY",
 };
 
-module.exports.RESPONSE_COMAND = {
+module.exports.RESPONSE_COMAND_MQTT = {
   INFOR_EM: "SYS_INFO",
   NEWSCAST: "SYS_BEAT",
   TIMER: "SYS_ARLARM",
@@ -18,4 +18,13 @@ module.exports.RESPONSE_COMAND = {
   CHANGE_SERVER: "SYS_SERVER",
   RESTART: "SYS_RESTART",
   CHANGE_EM: "SYS_ENERGY",
+};
+
+module.exports.REQUEST_COMAND_SOCKET = {
+  ADD_TIMER: "ADD_TIMER",
+  UPDATE_TIMER: "UPDATE_TIMER",
+  DELETE_TIMER: "DELETE_TIMERS",
+};
+module.exports.RESPONSE_COMAND_SOCKET = {
+  ADD_TIMER: "SYS_TIMER",
 };
