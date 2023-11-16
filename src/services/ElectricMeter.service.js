@@ -244,6 +244,15 @@ const getAccountSharedListByEMId = async (electricMeterId) => {
   }
 };
 
+const getAllEMsInSYS = async () => {
+  try {
+    const allEMs = await ElectricMeter.findAll();
+    return allEMs ? allEMs.map((em) => em.dataValues) : [];
+  } catch (error) {
+    return [];
+  }
+};
+
 module.exports = {
   addEM,
   findEM,
@@ -252,4 +261,5 @@ module.exports = {
   findEMsByAcountId,
   updateEm,
   getAccountSharedListByEMId,
+  getAllEMsInSYS,
 };

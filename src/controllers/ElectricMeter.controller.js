@@ -18,11 +18,11 @@ const {
   responseFailed,
   responseSuccess,
 } = require("../utils/helper/RESTHelper");
-const { toFloat2, toInt, handleAction } = require("../utils/helper/AppHelper");
+const { toFloat2, handleAction } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
-const { ROLE_EM } = require("../config/constant/constant_model");
+const { ROLE_EM, ACCOUNT_LEVEL } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
 const { REQUEST_COMAND_MQTT } = require("../config/constant/command");
 
@@ -378,7 +378,7 @@ const getEms = async (req, res) => {
         j++;
       }
     }
-    responseSuccess(res, ResponseStatus.SUCCESS, {
+    return responseSuccess(res, ResponseStatus.SUCCESS, {
       electricMeters: [
         ...ems.map((em) => {
           const { room, ...value } = em;
@@ -387,7 +387,7 @@ const getEms = async (req, res) => {
       ],
     });
   } catch (error) {
-    responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
   }
 };
 
