@@ -17,7 +17,7 @@ const { createTable } = require("./config/database/connect");
 createTable();
 
 //mqtt
-const { MQTTClient } = require("./services/mqtt.service");
+const { MQTTClient } = require("./services/mqtt_socket.service");
 MQTTClient();
 
 app.get("/", (req, res) => {
@@ -29,5 +29,5 @@ const server = app.listen(process.env.PORT, () => {
 });
 
 // websocket
-const { socketService } = require("./services/socket.service");
+const { socketService } = require("./services/mqtt_socket.service");
 socketService(server);

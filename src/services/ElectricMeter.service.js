@@ -1,5 +1,3 @@
-const { createHome } = require("./Home.service");
-const { createRoom } = require("./Room.service");
 const ElectricMeter = require("../models/ElectricMeter");
 const Room = require("../models/Room");
 const Home = require("../models/Home");
