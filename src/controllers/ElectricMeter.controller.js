@@ -42,7 +42,6 @@ const {
   getEnergyChangesOnYear,
 } = require("../services/EnergyChange.service");
 const { createHome } = require("../services/Home.service");
-const { publish } = require("../services/mqtt.service");
 const {
   findSharedEmsByAccountId,
   findAccountByEMShareId,
@@ -420,55 +419,6 @@ const viewDetailEm = async (req, res) => {
   }
 };
 
-// Bật tắt công tơ
-const controlEm = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    const { load } = req.body;
-    if (load !== 0 && load !== 1) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND_MQTT.CONTROL,
-      data: { Status: load },
-    });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {});
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
-  }
-};
-
-// Khởi động lại công tơ
-const restartEm = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND_MQTT.RESTART,
-      data: {},
-    });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {});
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
-  }
-};
-
-//Scan wifi gần công tơ
-const scanWifi = async (req, res) => {
-  try {
-    const { electricMeterId } = req.em;
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND_MQTT.SCAN_WIFI,
-      data: {},
-    });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {});
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_GATEWAY, "Xảy ra lỗi");
-  }
-};
-
 // Báo cáo công tơ theo ngày
 const viewReportByDay = async (req, res) => {
   try {
@@ -774,26 +724,6 @@ const getAllNewscast = async (req, res) => {
   }
 };
 
-// Thay đổi chỉ số  công tơ
-const changeEnergyValue = async (req, res) => {
-  try {
-    const { value } = req.body;
-    const { electricMeterId } = req.em;
-    if (!value) {
-      return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-    }
-    const fValue = Number.parseFloat(value.toString());
-    await publish({
-      electricMeterId,
-      command: REQUEST_COMAND_MQTT.CHANGE_EM,
-      data: { value: fValue },
-    });
-    return responseSuccess(res, ResponseStatus.SUCCESS, {});
-  } catch (error) {
-    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
-  }
-};
-
 const createData = async (req, res) => {
   try {
     const electricMeterId = "SMR-64B708A0E22C";
@@ -852,9 +782,6 @@ module.exports = {
   getEms,
   getAllTimers,
   viewDetailEm,
-  controlEm,
-  restartEm,
-  scanWifi,
   viewReportByDay,
   viewReportByMonth,
   viewReportByYear,
@@ -863,6 +790,5 @@ module.exports = {
   getAccountSharedList,
   deleteShareAccounts,
   getAllNewscast,
-  changeEnergyValue,
   createData,
 };

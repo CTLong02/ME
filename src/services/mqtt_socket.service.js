@@ -92,6 +92,9 @@ const socketService = (server) => {
         case REQUEST_COMAND_SOCKET.RESTART:
           restartEM({ websocket, electricMeterId });
           break;
+        case REQUEST_COMAND_SOCKET.SCAN_WIFI:
+          scanWifi();
+          break;
         default:
       }
     });
@@ -275,6 +278,8 @@ const onMessage = async (topic, payload) => {
       updateEm({ load: Status });
       handleWhenReceivedRestart({ electricMeterId });
       break;
+    case RESPONSE_COMAND_MQTT.SCAN_WIFI:
+      break;
     default:
   }
 };
@@ -342,6 +347,35 @@ const handleWhenReceivedRestart = async ({ electricMeterId }) => {
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.RESTART,
+        });
+      }
+      websocket.commands.shift();
+    }
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+// Xử lý khi broker trả về danh sách wifi
+const handleWhenReceivedWifis = async ({ electricMeterId, wifinames }) => {
+  try {
+    let websocket;
+    const account = await findAccountByEMId(electricMeterId);
+    const iterator1 = webSocketServer.clients.values();
+    const client = iterator1.next().value;
+    while (client) {
+      if (client.account.accountId === account.accountId) {
+        websocket = client;
+        break;
+      }
+      client = iterator1.next().value;
+    }
+    if (Array.isArray(websocket.commands)) {
+      if (websocket.commands[0] === REQUEST_COMAND_SOCKET.SCAN_WIFI) {
+        sendMessageFSuccessful({
+          websocket,
+          command: RESPONSE_COMAND_SOCKET.RESTART,
+          data: { wifinames },
         });
       }
       websocket.commands.shift();
@@ -533,6 +567,20 @@ const restartEM = async ({ websocket, electricMeterId }) => {
       electricMeterId,
       command: REQUEST_COMAND_MQTT.RESTART,
     });
+  } catch (error) {
+    sendMessageFailed({
+      websocket,
+      command: RESPONSE_COMAND_SOCKET.RESTART,
+      reason: "Có lỗi xảy ra ",
+    });
+    return;
+  }
+};
+
+// scan wifi
+const scanWifi = async ({ websocket, electricMeterId }) => {
+  try {
+    await publish({ electricMeterId, command: REQUEST_COMAND_MQTT.SCAN_WIFI });
   } catch (error) {
     sendMessageFailed({
       websocket,

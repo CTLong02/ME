@@ -14,9 +14,6 @@ const {
   getEms,
   getAllTimers,
   viewDetailEm,
-  controlEm,
-  restartEm,
-  scanWifi,
   viewReportByDay,
   viewReportByMonth,
   viewReportByYear,
@@ -25,7 +22,6 @@ const {
   getAccountSharedList,
   deleteShareAccounts,
   getAllNewscast,
-  changeEnergyValue,
   createData,
 } = require("../controllers/ElectricMeter.controller");
 const { URL_EM } = require("../config/constant/urls");
@@ -60,24 +56,6 @@ ElectricMeterRouter.get(
   URL_EM.detailEm,
   [authMiddleware, permisionEmMiddleware],
   viewDetailEm
-);
-
-ElectricMeterRouter.put(
-  URL_EM.controlEm,
-  [authMiddleware, permisionEmMiddleware],
-  controlEm
-);
-
-ElectricMeterRouter.put(
-  URL_EM.restartEm,
-  [authMiddleware, permisionEmMiddleware],
-  restartEm
-);
-
-ElectricMeterRouter.get(
-  URL_EM.scanWifi,
-  [authMiddleware, permisionEmMiddleware],
-  scanWifi
 );
 
 ElectricMeterRouter.get(
@@ -125,12 +103,6 @@ ElectricMeterRouter.get(
   URL_EM.getAllNewscast,
   [authMiddleware, permisionEmMiddleware],
   getAllNewscast
-);
-
-ElectricMeterRouter.put(
-  URL_EM.changeEnergyValue,
-  [authMiddleware, permisionEmMiddleware],
-  changeEnergyValue
 );
 
 ElectricMeterRouter.post(URL_EM.createData, [authMiddleware], createData);
