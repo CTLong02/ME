@@ -68,11 +68,11 @@ const socketService = (server) => {
       const { action, time, daily } = message;
       switch (command) {
         case REQUEST_COMAND_SOCKET.ADD_TIMER:
-          addCommand({ websocket, command });
+          addCommand({ websocket, command, electricMeterId });
           addTimer({ websocket, electricMeterId, action, time, daily });
           break;
         case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
-          addCommand({ websocket, command });
+          addCommand({ websocket, command, electricMeterId });
           const { timerId } = message;
           updateTimer({
             websocket,
@@ -84,7 +84,7 @@ const socketService = (server) => {
           });
           break;
         case REQUEST_COMAND_SOCKET.DELETE_TIMER:
-          addCommand({ websocket, command });
+          addCommand({ websocket, command, electricMeterId });
           const { timerIds } = message;
           deleteTimer({ websocket, electricMeterId, timerIds });
           break;
@@ -96,7 +96,7 @@ const socketService = (server) => {
           restartEM({ websocket, electricMeterId });
           break;
         case REQUEST_COMAND_SOCKET.SCAN_WIFI:
-          addCommand({ websocket, command });
+          addCommand({ websocket, command, electricMeterId });
           scanWifi({ websocket, electricMeterId });
           break;
         case REQUEST_COMAND_SOCKET.CONNECT_WIFI:
@@ -317,16 +317,16 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.commands)) {
+    if (Array.isArray(websocket.requests)) {
       const arr = [];
-      const indexAdd = websocket.commands.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.ADD_TIMER
+      const indexAdd = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.ADD_TIMER
       );
-      const indexUpdate = websocket.commands.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.UPDATE_TIMER
+      const indexUpdate = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.UPDATE_TIMER
       );
-      const indexDelete = websocket.commands.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.DELETE_TIMER
+      const indexDelete = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.DELETE_TIMER
       );
       if (indexAdd > -1) {
         arr.push(indexAdd);
@@ -339,7 +339,7 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
       }
       const indexMin = Math.min(...arr);
       if (indexMin === indexAdd) {
-        websocket.commands.splice(indexAdd, 1);
+        websocket.requests.splice(indexAdd, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
@@ -349,7 +349,7 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
       }
 
       if (indexMin === indexUpdate) {
-        websocket.commands.splice(indexUpdate, 1);
+        websocket.requests.splice(indexUpdate, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.UPDATE_TIMER,
@@ -359,7 +359,7 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
       }
 
       if (indexMin === indexDelete) {
-        websocket.commands.splice(indexDelete, 1);
+        websocket.requests.splice(indexDelete, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.DELETE_TIMER,
@@ -387,14 +387,14 @@ const handleWhenReceivedRestart = async ({ electricMeterId }) => {
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.commands)) {
-      if (websocket.commands[0] === REQUEST_COMAND_SOCKET.RESTART) {
+    if (Array.isArray(websocket.requests)) {
+      if (websocket.requests[0] === REQUEST_COMAND_SOCKET.RESTART) {
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.RESTART,
         });
       }
-      websocket.commands.shift();
+      websocket.requests.shift();
     }
   } catch (error) {
     console.log(error.message);
@@ -410,18 +410,24 @@ const handleWhenReceivedWifis = async ({ electricMeterId, ssids }) => {
     const clients = [];
     while (client) {
       if (
-        Array.isArray(client.commands) &&
-        client.commands.includes(REQUEST_COMAND_SOCKET.SCAN_WIFI)
+        Array.isArray(client.requests) &&
+        JSON.stringify(client.requests).includes(
+          JSON.stringify({
+            command: REQUEST_COMAND_SOCKET.SCAN_WIFI,
+            electricMeterId,
+          })
+        )
       ) {
         clients.push(client);
+        break;
       }
       client = iterator1.next().value;
     }
     clients.forEach((websocket) => {
-      const index = websocket.commands.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.SCAN_WIFI
+      const index = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.SCAN_WIFI
       );
-      websocket.commands.splice(index, 1);
+      websocket.requests.splice(index, 1);
       sendMessageFSuccessful({
         websocket,
         command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
@@ -451,12 +457,12 @@ const handleWhenReceivedWifiConnection = async ({
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.commands)) {
-      const index = websocket.commands.findIndex(
+    if (Array.isArray(websocket.requests)) {
+      const index = websocket.requests.findIndex(
         (command) => command === REQUEST_COMAND_SOCKET.CONNECT_WIFI
       );
       if (index > -1) {
-        websocket.commands.splice(index, 1);
+        websocket.requests.splice(index, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.CONNECT_WIFI,
@@ -470,11 +476,11 @@ const handleWhenReceivedWifiConnection = async ({
 };
 
 // Thêm cách yêu cầu vào một danh sách
-const addCommand = ({ websocket, command }) => {
-  if (Array.isArray(websocket.commands)) {
-    websocket.commands.push(command);
+const addCommand = ({ websocket, command, electricMeterId }) => {
+  if (Array.isArray(websocket.requests)) {
+    websocket.requests.push({ command, electricMeterId });
   } else {
-    websocket.commands = [command];
+    websocket.requests = [{ command, electricMeterId }];
   }
 };
 
