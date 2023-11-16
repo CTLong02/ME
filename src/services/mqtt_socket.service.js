@@ -65,12 +65,13 @@ const socketService = (server) => {
         data.toString()
       );
       const { action, time, daily } = message;
-      addCommand({ websocket, command });
       switch (command) {
         case REQUEST_COMAND_SOCKET.ADD_TIMER:
+          addCommand({ websocket, command });
           addTimer({ websocket, electricMeterId, action, time, daily });
           break;
         case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
+          addCommand({ websocket, command });
           const { timerId } = message;
           updateTimer({
             websocket,
@@ -82,6 +83,7 @@ const socketService = (server) => {
           });
           break;
         case REQUEST_COMAND_SOCKET.DELETE_TIMER:
+          addCommand({ websocket, command });
           const { timerIds } = message;
           deleteTimer({ websocket, electricMeterId, timerIds });
           break;
@@ -93,7 +95,8 @@ const socketService = (server) => {
           restartEM({ websocket, electricMeterId });
           break;
         case REQUEST_COMAND_SOCKET.SCAN_WIFI:
-          scanWifi();
+          addCommand({ websocket, command });
+          scanWifi({ websocket, electricMeterId });
           break;
         default:
       }
@@ -279,6 +282,8 @@ const onMessage = async (topic, payload) => {
       handleWhenReceivedRestart({ electricMeterId });
       break;
     case RESPONSE_COMAND_MQTT.SCAN_WIFI:
+      const { Name } = data;
+      handleWhenReceivedWifis({ electricMeterId, wifinames: Name });
       break;
     default:
   }
@@ -299,21 +304,48 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
       client = iterator1.next().value;
     }
     if (Array.isArray(websocket.commands)) {
-      if (websocket.commands[0] === REQUEST_COMAND_SOCKET.ADD_TIMER) {
+      const arr = [];
+      const indexAdd = websocket.commands.findIndex(
+        (command) => command === REQUEST_COMAND_SOCKET.ADD_TIMER
+      );
+      const indexUpdate = websocket.commands.findIndex(
+        (command) => command === REQUEST_COMAND_SOCKET.UPDATE_TIMER
+      );
+      const indexDelete = websocket.commands.findIndex(
+        (command) => command === REQUEST_COMAND_SOCKET.DELETE_TIMER
+      );
+      if (indexAdd > -1) {
+        arr.push(indexAdd);
+      }
+      if (indexUpdate > -1) {
+        arr.push(indexUpdate);
+      }
+      if (indexDelete > -1) {
+        arr.push(indexDelete);
+      }
+      const indexMin = Math.min(...arr);
+      if (indexMin === indexAdd) {
+        websocket.commands.splice(indexAdd, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.ADD_TIMER,
           data: { timers },
         });
         return;
-      } else if (websocket.commands[0] === REQUEST_COMAND_SOCKET.UPDATE_TIMER) {
+      }
+
+      if (indexMin === indexUpdate) {
+        websocket.commands.splice(indexUpdate, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.UPDATE_TIMER,
           data: { timers },
         });
         return;
-      } else if (websocket.commands[0] === REQUEST_COMAND_SOCKET.DELETE_TIMER) {
+      }
+
+      if (indexMin === indexDelete) {
+        websocket.commands.splice(indexDelete, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.DELETE_TIMER,
@@ -321,7 +353,6 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
         });
         return;
       }
-      websocket.commands.shift();
     }
   } catch (error) {
     console.log(error.message);
@@ -371,14 +402,17 @@ const handleWhenReceivedWifis = async ({ electricMeterId, wifinames }) => {
       client = iterator1.next().value;
     }
     if (Array.isArray(websocket.commands)) {
-      if (websocket.commands[0] === REQUEST_COMAND_SOCKET.SCAN_WIFI) {
+      const index = websocket.commands.findIndex(
+        (command) => command === REQUEST_COMAND_SOCKET.SCAN_WIFI
+      );
+      if (index > -1) {
+        websocket.commands.splice(index, 1);
         sendMessageFSuccessful({
           websocket,
-          command: RESPONSE_COMAND_SOCKET.RESTART,
+          command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
           data: { wifinames },
         });
       }
-      websocket.commands.shift();
     }
   } catch (error) {
     console.log(error.message);
