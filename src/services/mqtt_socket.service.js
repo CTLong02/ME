@@ -419,7 +419,7 @@ const handleWhenReceivedWifis = async ({ electricMeterId, wifinames }) => {
   }
 };
 
-// lịch yêu cầu với tập yêu cầu để nhận biết yêu cầu nào đến trước
+// Thêm cách yêu cầu vào một danh sách
 const addCommand = ({ websocket, command }) => {
   if (Array.isArray(websocket.commands)) {
     websocket.commands.push(command);
