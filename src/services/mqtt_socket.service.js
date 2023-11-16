@@ -60,6 +60,7 @@ const socketService = (server) => {
   });
 
   webSocketServer.addListener("connection", (websocket, request) => {
+    // nhận message từ app
     websocket.on("message", (data, isBinary) => {
       const { command, electricMeterId, ...message } = JSON.parse(
         data.toString()
@@ -98,6 +99,9 @@ const socketService = (server) => {
           addCommand({ websocket, command });
           scanWifi({ websocket, electricMeterId });
           break;
+        case REQUEST_COMAND_SOCKET.CONNECT_WIFI:
+          connectWifi({ websocket, electricMeterId, ssid, pass });
+          break;
         default:
       }
     });
@@ -114,6 +118,7 @@ const MQTTClient = () => {
   });
 };
 
+// gửi message lên công tơ
 const publish = async ({ electricMeterId, command, data }) => {
   const message = { command, ...data };
   const topic = `SM_EL_MT/${electricMeterId}/sub`;
@@ -123,6 +128,7 @@ const publish = async ({ electricMeterId, command, data }) => {
   }
 };
 
+// Nhận message từ công tơ
 const onMessage = async (topic, payload) => {
   const message = JSON.parse(payload.toString());
   const { command, ...data } = message;
@@ -283,13 +289,21 @@ const onMessage = async (topic, payload) => {
       break;
     case RESPONSE_COMAND_MQTT.SCAN_WIFI:
       const { Name } = data;
-      handleWhenReceivedWifis({ electricMeterId, wifinames: Name });
+      handleWhenReceivedWifis({ electricMeterId, ssids: Name });
+      break;
+    case RESPONSE_COMAND_MQTT.CONNECT_WIFT:
+      const { Ssid, Pass } = data;
+      handleWhenReceivedWifiConnection({
+        electricMeterId,
+        ssid: Ssid,
+        pass: Pass,
+      });
       break;
     default:
   }
 };
 
-// Xử lý khi broker trả về hẹn giờ
+// Xử lý khi công tơ trả về hẹn giờ
 const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
   try {
     let websocket;
@@ -359,7 +373,7 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
   }
 };
 
-// Xử lý khi broker trả về restart
+// Xử lý khi công tơ trả về restart
 const handleWhenReceivedRestart = async ({ electricMeterId }) => {
   try {
     let websocket;
@@ -387,8 +401,44 @@ const handleWhenReceivedRestart = async ({ electricMeterId }) => {
   }
 };
 
-// Xử lý khi broker trả về danh sách wifi
-const handleWhenReceivedWifis = async ({ electricMeterId, wifinames }) => {
+// Xử lý khi công tơ trả về danh sách wifi
+const handleWhenReceivedWifis = async ({ electricMeterId, ssids }) => {
+  try {
+    // const account = await findAccountByEMId(electricMeterId);
+    const iterator1 = webSocketServer.clients.values();
+    let client = iterator1.next().value;
+    const clients = [];
+    while (client) {
+      if (
+        Array.isArray(client.commands) &&
+        client.commands.includes(REQUEST_COMAND_SOCKET.SCAN_WIFI)
+      ) {
+        clients.push(client);
+      }
+      client = iterator1.next().value;
+    }
+    clients.forEach((websocket) => {
+      const index = websocket.commands.findIndex(
+        (command) => command === REQUEST_COMAND_SOCKET.SCAN_WIFI
+      );
+      websocket.commands.splice(index, 1);
+      sendMessageFSuccessful({
+        websocket,
+        command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
+        data: { ssids },
+      });
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+// Xử lý khi công tơ trả về kết nối
+const handleWhenReceivedWifiConnection = async ({
+  electricMeterId,
+  ssid,
+  pass,
+}) => {
   try {
     let websocket;
     const account = await findAccountByEMId(electricMeterId);
@@ -403,14 +453,14 @@ const handleWhenReceivedWifis = async ({ electricMeterId, wifinames }) => {
     }
     if (Array.isArray(websocket.commands)) {
       const index = websocket.commands.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.SCAN_WIFI
+        (command) => command === REQUEST_COMAND_SOCKET.CONNECT_WIFI
       );
       if (index > -1) {
         websocket.commands.splice(index, 1);
         sendMessageFSuccessful({
           websocket,
-          command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
-          data: { wifinames },
+          command: RESPONSE_COMAND_SOCKET.CONNECT_WIFI,
+          data: { ssid, pass },
         });
       }
     }
@@ -615,6 +665,24 @@ const restartEM = async ({ websocket, electricMeterId }) => {
 const scanWifi = async ({ websocket, electricMeterId }) => {
   try {
     await publish({ electricMeterId, command: REQUEST_COMAND_MQTT.SCAN_WIFI });
+  } catch (error) {
+    sendMessageFailed({
+      websocket,
+      command: RESPONSE_COMAND_SOCKET.RESTART,
+      reason: "Có lỗi xảy ra ",
+    });
+    return;
+  }
+};
+
+// Kết nối wifi
+const connectWifi = async ({ websocket, electricMeterId, ssid, pass }) => {
+  try {
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND_MQTT.CONNECT_WIFT,
+      data: { Ssid: ssid, Pass: pass },
+    });
   } catch (error) {
     sendMessageFailed({
       websocket,
