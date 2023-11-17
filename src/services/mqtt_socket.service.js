@@ -76,7 +76,7 @@ const socketService = (server) => {
       const { command, electricMeterId, ...message } = JSON.parse(
         data.toString()
       );
-      const { action, time, daily } = message;
+      const { action, time, daily, ssid, pass } = message;
       switch (command) {
         case REQUEST_COMAND_SOCKET.ADD_TIMER:
           addCommand({
@@ -137,7 +137,13 @@ const socketService = (server) => {
           });
           break;
         case REQUEST_COMAND_SOCKET.CONNECT_WIFI:
-          connectWifi({ websocket, electricMeterId, ssid, pass });
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: connectWifi,
+            props: { websocket, electricMeterId, ssid, pass },
+          });
           break;
         default:
       }
