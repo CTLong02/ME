@@ -119,7 +119,13 @@ const socketService = (server) => {
           relay({ websocket, electricMeterId, status });
           break;
         case REQUEST_COMAND_SOCKET.RESTART:
-          restartEM({ websocket, electricMeterId });
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: restartEM,
+            props: { websocket, electricMeterId },
+          });
           break;
         case REQUEST_COMAND_SOCKET.SCAN_WIFI:
           addCommand({
@@ -316,7 +322,7 @@ const onMessage = async (topic, payload) => {
     case RESPONSE_COMAND_MQTT.RESTART:
       const { Status } = data;
       updateEm({ load: Status });
-      handleWhenReceivedRestart({ electricMeterId });
+      handleWhenReceivedRestart({ electricMeterId, status: Status });
       break;
     case RESPONSE_COMAND_MQTT.SCAN_WIFI:
       const { Name } = data;
@@ -353,19 +359,13 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
     websockets.forEach((websocket) => {
       const arr = [];
       const indexAdd = websocket.requests.findIndex(
-        (request) =>
-          request.command === REQUEST_COMAND_SOCKET.ADD_TIMER &&
-          request.electricMeterId === electricMeterId
+        (request) => request.command === REQUEST_COMAND_SOCKET.ADD_TIMER
       );
       const indexUpdate = websocket.requests.findIndex(
-        (request) =>
-          request.command === REQUEST_COMAND_SOCKET.UPDATE_TIMER &&
-          request.electricMeterId === electricMeterId
+        (request) => request.command === REQUEST_COMAND_SOCKET.UPDATE_TIMER
       );
       const indexDelete = websocket.requests.findIndex(
-        (request) =>
-          request.command === REQUEST_COMAND_SOCKET.DELETE_TIMERS &&
-          request.electricMeterId === electricMeterId
+        (request) => request.command === REQUEST_COMAND_SOCKET.DELETE_TIMERS
       );
       if (indexAdd > -1) {
         arr.push(indexAdd);
@@ -413,11 +413,11 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
 };
 
 // Xử lý khi công tơ trả về restart
-const handleWhenReceivedRestart = async ({ electricMeterId }) => {
+const handleWhenReceivedRestart = async ({ electricMeterId, status }) => {
   try {
     const websockets = [];
     const iterator1 = webSocketServer.clients.values();
-    const client = iterator1.next().value;
+    let client = iterator1.next().value;
     while (client) {
       if (Array.isArray(client.requests)) {
         const electricMeterIds = client.requests.map(
@@ -438,6 +438,7 @@ const handleWhenReceivedRestart = async ({ electricMeterId }) => {
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.RESTART,
+          data: { status },
         });
       }
     });
