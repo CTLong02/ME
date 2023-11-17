@@ -71,13 +71,10 @@ const findAccountByEMId = async (electricMeterId) => {
         {
           model: Room,
           as: "room",
-          right: true,
-          required: true,
           include: [
             {
               model: Home,
               as: "home",
-              required: true,
               include: [{ model: Account, as: "account" }],
             },
           ],
@@ -151,6 +148,7 @@ const updateEm = async ({
   rtc,
   electricMetername,
   macAddress,
+  roomId,
 }) => {
   try {
     const em = await ElectricMeter.findOne({ where: { electricMeterId } });
@@ -174,6 +172,7 @@ const updateEm = async ({
       ? electricMetername
       : em.electricMetername;
     em.macAddress = macAddress ? macAddress : em.macAddress;
+    em.roomId = roomId ? roomId : em.roomId;
     em.updateAt = new Date();
     await em.save();
     return em.dataValues;
@@ -251,6 +250,40 @@ const getAllEMsInSYS = async () => {
   }
 };
 
+const getInforEMAndOwnAccount = async (electricMeterId) => {
+  try {
+    const electricMeter = await ElectricMeter.findOne({
+      where: { electricMeterId },
+      include: [
+        {
+          model: Room,
+          as: "room",
+          right: true,
+          required: true,
+          include: [
+            {
+              model: Home,
+              as: "home",
+              required: true,
+              include: [{ model: Account, as: "account", required: true }],
+            },
+          ],
+        },
+      ],
+    });
+    const { room, ...electricMeterData } = electricMeter.dataValues;
+    const { home, ...roomData } = electricMeter.dataValues?.room.dataValues;
+    const { account, ...homeData } =
+      electricMeter.dataValues?.room.dataValues?.home.dataValues;
+    const accountData =
+      electricMeter.dataValues?.room.dataValues?.home.dataValues?.account
+        .dataValues;
+    return { ...electricMeterData, ...roomData, ...homeData, ...accountData };
+  } catch (error) {
+    return null;
+  }
+};
+
 module.exports = {
   addEM,
   findEM,
@@ -260,4 +293,5 @@ module.exports = {
   updateEm,
   getAccountSharedListByEMId,
   getAllEMsInSYS,
+  getInforEMAndOwnAccount,
 };

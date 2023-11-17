@@ -6,6 +6,10 @@ const {
   TIMER_ACTION,
   TIMER_ACTION_ID,
 } = require("../../config/constant/constant_model");
+const {
+  REQUEST_COMAND_SOCKET,
+  RESPONSE_COMAND_SOCKET,
+} = require("../../config/constant/command");
 const handleUpdateFirmware = (update) => {
   switch (update) {
     case UPDATE_FIRMWARE_NUMBER.not_update:
@@ -53,10 +57,29 @@ const handleAction = (actionId) => {
   }
 };
 
+const handleResSocketCorespondingReqSocket = (command) => {
+  switch (command) {
+    case REQUEST_COMAND_SOCKET.ADD_TIMER:
+      return RESPONSE_COMAND_SOCKET.ADD_TIMER;
+    case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
+      return RESPONSE_COMAND_SOCKET.UPDATE_TIMER;
+    case REQUEST_COMAND_SOCKET.DELETE_TIMERS:
+      return RESPONSE_COMAND_SOCKET.DELETE_TIMERS;
+    case REQUEST_COMAND_SOCKET.RELAY:
+      return RESPONSE_COMAND_SOCKET.RELAY;
+    case REQUEST_COMAND_SOCKET.RESTART:
+      return RESPONSE_COMAND_SOCKET.RESTART;
+    case REQUEST_COMAND_SOCKET.SCAN_WIFI:
+      return RESPONSE_COMAND_SOCKET.SCAN_WIFI;
+    default:
+  }
+};
+
 module.exports = {
   handleUpdateFirmware,
   handleConn,
   toFloat2,
   toInt,
   handleAction,
+  handleResSocketCorespondingReqSocket,
 };

@@ -1,15 +1,13 @@
 module.exports.URL_EM = {
   renameEm: "/rename",
   addEm: "/add",
+  addEMForAnAccount: "/add-for-account",
   shareEm: "/share",
   acceptEm: "/accept",
   rejectdEm: "/reject",
   getEms: "/get-ems",
   deleteEm: "/delete",
   detailEm: "/detail",
-  controlEm: "/control",
-  restartEm: "/restart",
-  scanWifi: "/scan-wifi",
   viewReportByDay: "/view-report-by-day",
   viewReportByMonth: "/view-report-by-month",
   viewReportByYear: "/view-report-by-year",
@@ -18,7 +16,6 @@ module.exports.URL_EM = {
   sharedList: "/share-list",
   getAllNewscast: "/all-newscast",
   deleteShareAccount: "/delete-share-account",
-  changeEnergyValue: "/change-energy",
   createData: "/create-data",
 };
 

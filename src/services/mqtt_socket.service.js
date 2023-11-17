@@ -7,7 +7,11 @@ const Token = require("../models/Token");
 const client = require("../config/mqtt/connect");
 
 const ResponseStatus = require("../config/constant/response_status");
-const { RESPONSE_RESULT } = require("../config/constant/contants_app");
+const {
+  RESPONSE_RESULT,
+  EM_ROLES,
+  COMMAND_SOCKET_WITH_EM_ROLE,
+} = require("../config/constant/contants_app");
 const {
   REQUEST_COMAND_SOCKET,
   RESPONSE_COMAND_SOCKET,
@@ -17,6 +21,7 @@ const {
 const {
   TIMER_ACTION_ID,
   TIMER_ACTION,
+  ACCOUNT_LEVEL,
 } = require("../config/constant/constant_model");
 
 const {
@@ -27,11 +32,16 @@ const {
 const {
   handleConn,
   handleUpdateFirmware,
+  handleResSocketCorespondingReqSocket,
 } = require("../utils/helper/AppHelper");
 
-const { getTimersByEMId, findedTimerById } = require("./Timer.service");
+const {
+  createTimers,
+  getTimersByEMId,
+  findedTimerById,
+  deleteAllTimers,
+} = require("./Timer.service");
 const { createEnergy, findEnergy } = require("./Energy.service");
-const { createTimers, deleteAllTimers } = require("./Timer.service");
 const {
   addEM,
   findEMById,
@@ -42,6 +52,7 @@ const {
   createEnergyChange,
   getLastEnergyChange,
 } = require("./EnergyChange.service");
+const { findAccountByEMShareId } = require("./ElectricMeterShare.service");
 
 const webSocketServer = new WebSocketServer({ noServer: true, path: "/ws" });
 const socketService = (server) => {
@@ -68,25 +79,40 @@ const socketService = (server) => {
       const { action, time, daily } = message;
       switch (command) {
         case REQUEST_COMAND_SOCKET.ADD_TIMER:
-          addCommand({ websocket, command, electricMeterId });
-          addTimer({ websocket, electricMeterId, action, time, daily });
-          break;
-        case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
-          addCommand({ websocket, command, electricMeterId });
-          const { timerId } = message;
-          updateTimer({
+          addCommand({
             websocket,
+            command,
             electricMeterId,
-            timerId,
-            action,
-            time,
-            daily,
+            callback: addTimer,
+            props: { websocket, electricMeterId, action, time, daily },
           });
           break;
-        case REQUEST_COMAND_SOCKET.DELETE_TIMER:
-          addCommand({ websocket, command, electricMeterId });
+        case REQUEST_COMAND_SOCKET.UPDATE_TIMER:
+          const { timerId } = message;
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: updateTimer,
+            props: {
+              websocket,
+              electricMeterId,
+              timerId,
+              action,
+              time,
+              daily,
+            },
+          });
+          break;
+        case REQUEST_COMAND_SOCKET.DELETE_TIMERS:
           const { timerIds } = message;
-          deleteTimer({ websocket, electricMeterId, timerIds });
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: deleteTimers,
+            props: { websocket, electricMeterId, timerIds },
+          });
           break;
         case REQUEST_COMAND_SOCKET.RELAY:
           const { status } = message;
@@ -96,8 +122,13 @@ const socketService = (server) => {
           restartEM({ websocket, electricMeterId });
           break;
         case REQUEST_COMAND_SOCKET.SCAN_WIFI:
-          addCommand({ websocket, command, electricMeterId });
-          scanWifi({ websocket, electricMeterId });
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: scanWifi,
+            props: { websocket, electricMeterId },
+          });
           break;
         case REQUEST_COMAND_SOCKET.CONNECT_WIFI:
           connectWifi({ websocket, electricMeterId, ssid, pass });
@@ -292,7 +323,6 @@ const onMessage = async (topic, payload) => {
       handleWhenReceivedWifis({ electricMeterId, ssids: Name });
       break;
     case RESPONSE_COMAND_MQTT.CONNECT_WIFT:
-      const { Ssid, Pass } = data;
       handleWhenReceivedWifiConnection({
         electricMeterId,
         ssid: Ssid,
@@ -306,27 +336,36 @@ const onMessage = async (topic, payload) => {
 // Xử lý khi công tơ trả về hẹn giờ
 const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
   try {
-    let websocket;
-    const account = await findAccountByEMId(electricMeterId);
+    const websockets = [];
     const iterator1 = webSocketServer.clients.values();
-    const client = iterator1.next().value;
+    let client = iterator1.next().value;
     while (client) {
-      if (client.account.accountId === account.accountId) {
-        websocket = client;
-        break;
+      if (Array.isArray(client.requests)) {
+        const electricMeterIds = client.requests.map(
+          (item) => item.electricMeterId
+        );
+        if (electricMeterIds.includes(electricMeterId)) {
+          websockets.push(client);
+        }
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.requests)) {
+    websockets.forEach((websocket) => {
       const arr = [];
       const indexAdd = websocket.requests.findIndex(
-        (request) => request.command === REQUEST_COMAND_SOCKET.ADD_TIMER
+        (request) =>
+          request.command === REQUEST_COMAND_SOCKET.ADD_TIMER &&
+          request.electricMeterId === electricMeterId
       );
       const indexUpdate = websocket.requests.findIndex(
-        (request) => request.command === REQUEST_COMAND_SOCKET.UPDATE_TIMER
+        (request) =>
+          request.command === REQUEST_COMAND_SOCKET.UPDATE_TIMER &&
+          request.electricMeterId === electricMeterId
       );
       const indexDelete = websocket.requests.findIndex(
-        (request) => request.command === REQUEST_COMAND_SOCKET.DELETE_TIMER
+        (request) =>
+          request.command === REQUEST_COMAND_SOCKET.DELETE_TIMERS &&
+          request.electricMeterId === electricMeterId
       );
       if (indexAdd > -1) {
         arr.push(indexAdd);
@@ -362,12 +401,12 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
         websocket.requests.splice(indexDelete, 1);
         sendMessageFSuccessful({
           websocket,
-          command: RESPONSE_COMAND_SOCKET.DELETE_TIMER,
+          command: RESPONSE_COMAND_SOCKET.DELETE_TIMERS,
           data: { timers },
         });
         return;
       }
-    }
+    });
   } catch (error) {
     console.log(error.message);
   }
@@ -376,26 +415,32 @@ const handleWhenReceivedTimer = async ({ electricMeterId, timers }) => {
 // Xử lý khi công tơ trả về restart
 const handleWhenReceivedRestart = async ({ electricMeterId }) => {
   try {
-    let websocket;
-    const account = await findAccountByEMId(electricMeterId);
+    const websockets = [];
     const iterator1 = webSocketServer.clients.values();
     const client = iterator1.next().value;
     while (client) {
-      if (client.account.accountId === account.accountId) {
-        websocket = client;
-        break;
+      if (Array.isArray(client.requests)) {
+        const electricMeterIds = client.requests.map(
+          (item) => item.electricMeterId
+        );
+        if (electricMeterIds.includes(electricMeterId)) {
+          websockets.push(client);
+        }
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.requests)) {
-      if (websocket.requests[0] === REQUEST_COMAND_SOCKET.RESTART) {
+    websockets.forEach((websocket) => {
+      const index = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.RESTART
+      );
+      if (index > -1) {
+        websocket.requests.splice(index, 1);
         sendMessageFSuccessful({
           websocket,
           command: RESPONSE_COMAND_SOCKET.RESTART,
         });
       }
-      websocket.requests.shift();
-    }
+    });
   } catch (error) {
     console.log(error.message);
   }
@@ -404,26 +449,21 @@ const handleWhenReceivedRestart = async ({ electricMeterId }) => {
 // Xử lý khi công tơ trả về danh sách wifi
 const handleWhenReceivedWifis = async ({ electricMeterId, ssids }) => {
   try {
-    // const account = await findAccountByEMId(electricMeterId);
     const iterator1 = webSocketServer.clients.values();
     let client = iterator1.next().value;
-    const clients = [];
+    const websockets = [];
     while (client) {
-      if (
-        Array.isArray(client.requests) &&
-        JSON.stringify(client.requests).includes(
-          JSON.stringify({
-            command: REQUEST_COMAND_SOCKET.SCAN_WIFI,
-            electricMeterId,
-          })
-        )
-      ) {
-        clients.push(client);
-        break;
+      if (Array.isArray(client.requests)) {
+        const electricMeterIds = client.requests.map(
+          (item) => item.electricMeterId
+        );
+        if (electricMeterIds.includes(electricMeterId)) {
+          websockets.push(client);
+        }
       }
       client = iterator1.next().value;
     }
-    clients.forEach((websocket) => {
+    websockets.forEach((websocket) => {
       const index = websocket.requests.findIndex(
         (request) => request.command === REQUEST_COMAND_SOCKET.SCAN_WIFI
       );
@@ -476,12 +516,73 @@ const handleWhenReceivedWifiConnection = async ({
 };
 
 // Thêm cách yêu cầu vào một danh sách
-const addCommand = ({ websocket, command, electricMeterId }) => {
+const addCommand = async ({
+  websocket,
+  command,
+  electricMeterId,
+  callback,
+  props,
+}) => {
+  const { accountId, level } = websocket.account;
+  if (!COMMAND_SOCKET_WITH_EM_ROLE[command]) {
+    sendMessageFailed({
+      websocket,
+      command: handleResSocketCorespondingReqSocket(command),
+      reason: "Không tồn tại yêu cầu này",
+    });
+    return;
+  }
+  const em = await findAccountByEMId(electricMeterId);
+  if (!em) {
+    sendMessageFailed({
+      websocket,
+      command: handleResSocketCorespondingReqSocket(command),
+      reason: "Công tơ không tồn tại",
+    });
+    return;
+  }
+
+  if (COMMAND_SOCKET_WITH_EM_ROLE[command].length === 0) {
+    if (Array.isArray(websocket.requests)) {
+      websocket.requests.push({ command, electricMeterId });
+    } else {
+      websocket.requests = [{ command, electricMeterId }];
+    }
+    callback({ ...props });
+    return;
+  }
+
+  let role;
+  if (level === ACCOUNT_LEVEL.admin) {
+    role = EM_ROLES.admin;
+  }
+  if (!role && em.accountId === accountId) {
+    role = EM_ROLES.owner;
+  }
+  if (!role) {
+    const findedAccountByEMShareId = await findAccountByEMShareId(
+      electricMeterId,
+      accountId
+    );
+    if (findedAccountByEMShareId) {
+      role = findedAccountByEMShareId.roleShare;
+    }
+  }
+  if (!COMMAND_SOCKET_WITH_EM_ROLE[command].includes(role)) {
+    sendMessageFailed({
+      websocket,
+      command: handleResSocketCorespondingReqSocket(command),
+      reason: "Không đủ quyền",
+    });
+    return;
+  }
   if (Array.isArray(websocket.requests)) {
     websocket.requests.push({ command, electricMeterId });
   } else {
     websocket.requests = [{ command, electricMeterId }];
   }
+  callback({ ...props });
+  return;
 };
 
 // Thêm lịch trình
@@ -700,7 +801,7 @@ const connectWifi = async ({ websocket, electricMeterId, ssid, pass }) => {
 };
 
 // Xóa lịch trình
-const deleteTimer = async ({ websocket, electricMeterId, timerIds }) => {
+const deleteTimers = async ({ websocket, electricMeterId, timerIds }) => {
   try {
     if (!timerIds || !Array.isArray(timerIds)) {
       sendMessageFailed({

@@ -21,6 +21,7 @@ const {
   moveToRoom,
   getAccountSharedList,
   deleteShareAccounts,
+  addEmForAnAccount,
   getAllNewscast,
   createData,
 } = require("../controllers/ElectricMeter.controller");
@@ -99,11 +100,16 @@ ElectricMeterRouter.delete(
   deleteShareAccounts
 );
 
-ElectricMeterRouter.get(
-  URL_EM.getAllNewscast,
-  [authMiddleware, permisionEmMiddleware],
-  getAllNewscast
-);
+ElectricMeterRouter.post(
+  URL_EM.addEMForAnAccount,
+  [authMiddleware, exitsAccountMiddleware, permisionEmMiddleware],
+  addEmForAnAccount
+),
+  ElectricMeterRouter.get(
+    URL_EM.getAllNewscast,
+    [authMiddleware, permisionEmMiddleware],
+    getAllNewscast
+  );
 
 ElectricMeterRouter.post(URL_EM.createData, [authMiddleware], createData);
 

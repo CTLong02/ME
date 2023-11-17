@@ -4,6 +4,7 @@ const {
   API_WITH_EM_ROLE,
   EM_ROLES,
 } = require("../config/constant/contants_app");
+const { ACCOUNT_LEVEL } = require("../config/constant/constant_model");
 const {
   findEMById,
   findAccountByEMId,
@@ -93,7 +94,14 @@ const permisionEmMiddleware = async (req, res, next) => {
     const url = req._parsedUrl.pathname;
     const permisionRoles = API_WITH_EM_ROLE[url];
     const findedAccountByEMId = await findAccountByEMId(electricMeterId);
-    if (findedAccountByEMId && accountId === findedAccountByEMId.accountId) {
+    if (req.account.level === ACCOUNT_LEVEL.admin) {
+      myEmRole = EM_ROLES.admin;
+    }
+    if (
+      !myEmRole &&
+      findedAccountByEMId &&
+      accountId === findedAccountByEMId.accountId
+    ) {
       myEmRole = EM_ROLES.owner;
     }
 

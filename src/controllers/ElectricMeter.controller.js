@@ -22,9 +22,8 @@ const { toFloat2, handleAction } = require("../utils/helper/AppHelper");
 
 const TIME = require("../config/constant/constant_time");
 const ResponseStatus = require("../config/constant/response_status");
-const { ROLE_EM, ACCOUNT_LEVEL } = require("../config/constant/constant_model");
+const { ROLE_EM } = require("../config/constant/constant_model");
 const { EM_ROLES } = require("../config/constant/contants_app");
-const { REQUEST_COMAND_MQTT } = require("../config/constant/command");
 
 const {
   createRoom,
@@ -41,7 +40,7 @@ const {
   getEnergyChangesOnMonth,
   getEnergyChangesOnYear,
 } = require("../services/EnergyChange.service");
-const { createHome } = require("../services/Home.service");
+const { createHome, getHomesByAccountId } = require("../services/Home.service");
 const {
   findSharedEmsByAccountId,
   findAccountByEMShareId,
@@ -59,6 +58,7 @@ const {
   findEMById,
   updateEm,
   getAccountSharedListByEMId,
+  getInforEMAndOwnAccount,
 } = require("../services/ElectricMeter.service");
 const { getAllInfor } = require("../services/Account.service");
 const { getTimersByEMId } = require("../services/Timer.service");
@@ -171,7 +171,7 @@ const addEM = async (req, res) => {
       const room = await createRoom({
         roomname: !!roomname
           ? roomname
-          : `Phòng ${homeById.dataValues.rooms.length + 1}`,
+          : `Phòng số ${homeById.dataValues.rooms.length + 1}`,
         homeId,
       });
 
@@ -193,10 +193,10 @@ const addEM = async (req, res) => {
       accountId: req.account.accountId,
       homename: !!homename
         ? homename
-        : `Nhà ${account.dataValues?.homes.length + 1}`,
+        : `Nhà số ${account.dataValues?.homes.length + 1}`,
     });
     const room = await createRoom({
-      roomname: !!roomname ? roomname : "Phòng 1",
+      roomname: !!roomname ? roomname : "Phòng số 1",
       homeId: home.homeId,
     });
     findedEM.roomId = room.roomId;
@@ -717,6 +717,45 @@ const deleteShareAccounts = async (req, res) => {
   }
 };
 
+// Thêm thiết bị cho tài khoản khác
+const addEmForAnAccount = async (req, res) => {
+  try {
+    const { electricMeterId, accountId } = req.em;
+    if (accountId) {
+      return responseFailed(
+        res,
+        ResponseStatus.FORBIDDEN,
+        "Thiết bị này đã được thêm vào một tài khoản"
+      );
+    }
+    const recipientAccountId = req.recipientAccount.accountId;
+    const homes = await getHomesByAccountId(recipientAccountId);
+    const newHome = await createHome({
+      accountId: recipientAccountId,
+      homename: `Nhà số ${homes.length + 1}`,
+    });
+    const newRoom = await createRoom({
+      roomname: "Nhà số 1",
+      homeId: newHome.homeId,
+    });
+    const newEm = await updateEm({
+      electricMeterId,
+      roomId: newRoom.roomId,
+    });
+    if (!newEm) {
+      return responseFailed(
+        res,
+        ResponseStatus.BAD_GATEWAY,
+        "Thêm không thành công"
+      );
+    }
+    const electricMeter = await getInforEMAndOwnAccount(electricMeterId);
+    return responseSuccess(res, ResponseStatus.CREATED, { electricMeter });
+  } catch (error) {
+    return responseFailed(res, ResponseStatus.BAD_REQUEST, "Thiếu tham số");
+  }
+};
+
 const getAllNewscast = async (req, res) => {
   try {
   } catch (error) {
@@ -789,6 +828,7 @@ module.exports = {
   moveToRoom,
   getAccountSharedList,
   deleteShareAccounts,
+  addEmForAnAccount,
   getAllNewscast,
   createData,
 };
