@@ -124,7 +124,13 @@ const socketService = (server) => {
           break;
         case REQUEST_COMAND_SOCKET.CHANGE_SERVER:
           const { ser, port } = message;
-          changeServer({ websocket, electricMeterId, ser, port });
+          addCommand({
+            websocket,
+            command,
+            electricMeterId,
+            callback: changeServer,
+            props: { ser, port },
+          });
           break;
         case REQUEST_COMAND_SOCKET.RESTART:
           addCommand({
@@ -610,7 +616,7 @@ const addCommand = async ({
     } else {
       websocket.requests = [{ command, electricMeterId }];
     }
-    callback({ ...props });
+    callback({ electricMeterId, ...props });
     return;
   }
 
@@ -643,7 +649,7 @@ const addCommand = async ({
   } else {
     websocket.requests = [{ command, electricMeterId }];
   }
-  callback({ ...props });
+  callback({ electricMeterId, ...props });
   return;
 };
 
