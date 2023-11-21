@@ -118,6 +118,14 @@ const socketService = (server) => {
           const { status } = message;
           relay({ websocket, electricMeterId, status });
           break;
+        case REQUEST_COMAND_SOCKET.UPDATE_FIRMWARE:
+          const { url } = message;
+          updateFirmware({ websocket, electricMeterId, url });
+          break;
+        case REQUEST_COMAND_SOCKET.CHANGE_SERVER:
+          const { ser, port } = message;
+          changeServer({ websocket, electricMeterId, ser, port });
+          break;
         case REQUEST_COMAND_SOCKET.RESTART:
           addCommand({
             websocket,
@@ -340,6 +348,9 @@ const onMessage = async (topic, payload) => {
         ssid: Ssid,
         pass: Pass,
       });
+    case RESPONSE_COMAND_MQTT.CHANGE_SERVER:
+      const { Ser, Port } = data;
+      handleWhenReceivedChangeServer({ electricMeterId, ser: Ser, port: Port });
       break;
     default:
   }
@@ -474,12 +485,14 @@ const handleWhenReceivedWifis = async ({ electricMeterId, ssids }) => {
       const index = websocket.requests.findIndex(
         (request) => request.command === REQUEST_COMAND_SOCKET.SCAN_WIFI
       );
-      websocket.requests.splice(index, 1);
-      sendMessageFSuccessful({
-        websocket,
-        command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
-        data: { ssids },
-      });
+      if (index > -1) {
+        websocket.requests.splice(index, 1);
+        sendMessageFSuccessful({
+          websocket,
+          command: RESPONSE_COMAND_SOCKET.SCAN_WIFI,
+          data: { ssids },
+        });
+      }
     });
   } catch (error) {
     console.log(error.message);
@@ -493,20 +506,23 @@ const handleWhenReceivedWifiConnection = async ({
   pass,
 }) => {
   try {
-    let websocket;
-    const account = await findAccountByEMId(electricMeterId);
     const iterator1 = webSocketServer.clients.values();
-    const client = iterator1.next().value;
+    let client = iterator1.next().value;
+    const websockets = [];
     while (client) {
-      if (client.account.accountId === account.accountId) {
-        websocket = client;
-        break;
+      if (Array.isArray(client.requests)) {
+        const electricMeterIds = client.requests.map(
+          (item) => item.electricMeterId
+        );
+        if (electricMeterIds.includes(electricMeterId)) {
+          websockets.push(client);
+        }
       }
       client = iterator1.next().value;
     }
-    if (Array.isArray(websocket.requests)) {
+    websockets.forEach((websocket) => {
       const index = websocket.requests.findIndex(
-        (command) => command === REQUEST_COMAND_SOCKET.CONNECT_WIFI
+        (request) => request.command === REQUEST_COMAND_SOCKET.CONNECT_WIFI
       );
       if (index > -1) {
         websocket.requests.splice(index, 1);
@@ -516,7 +532,46 @@ const handleWhenReceivedWifiConnection = async ({
           data: { ssid, pass },
         });
       }
+    });
+  } catch (error) {
+    console.log(error.message);
+  }
+};
+
+// Xử lý khi công tơ nhận được sự thay đổi server
+const handleWhenReceivedChangeServer = async ({
+  electricMeterId,
+  ser,
+  port,
+}) => {
+  try {
+    const iterator1 = webSocketServer.clients.values();
+    let client = iterator1.next().value;
+    const websockets = [];
+    while (client) {
+      if (Array.isArray(client.requests)) {
+        const electricMeterIds = client.requests.map(
+          (item) => item.electricMeterId
+        );
+        if (electricMeterIds.includes(electricMeterId)) {
+          websockets.push(client);
+        }
+      }
+      client = iterator1.next().value;
     }
+    websockets.forEach((websocket) => {
+      const index = websocket.requests.findIndex(
+        (request) => request.command === REQUEST_COMAND_SOCKET.CHANGE_SERVER
+      );
+      if (index > -1) {
+        websocket.requests.splice(index, 1);
+        sendMessageFSuccessful({
+          websocket,
+          command: RESPONSE_COMAND_SOCKET.CHANGE_SERVER,
+          data: { ser, port },
+        });
+      }
+    });
   } catch (error) {
     console.log(error.message);
   }
@@ -752,6 +807,58 @@ const relay = async ({ websocket, electricMeterId, status }) => {
     sendMessageFailed({
       websocket,
       command: RESPONSE_COMAND_SOCKET.RELAY,
+      reason: "Có lỗi xảy ra ",
+    });
+    return;
+  }
+};
+
+// cập nhật firmware
+const updateFirmware = async ({ websocket, electricMeterId, url }) => {
+  try {
+    if (!url) {
+      sendMessageFailed({
+        websocket,
+        command: RESPONSE_COMAND_SOCKET.UPDATE_FIRMWARE,
+        reason: "Thiếu tham số",
+      });
+      return;
+    }
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND_MQTT.UPDATE_FIRMWARE,
+      data: { Url: url },
+    });
+  } catch (error) {
+    sendMessageFailed({
+      websocket,
+      command: RESPONSE_COMAND_SOCKET.UPDATE_FIRMWARE,
+      reason: "Có lỗi xảy ra ",
+    });
+    return;
+  }
+};
+
+// Thay đổi server
+const changeServer = async ({ websocket, electricMeterId, ser, port }) => {
+  try {
+    if (!ser || !port) {
+      sendMessageFailed({
+        websocket,
+        command: RESPONSE_COMAND_SOCKET.CHANGE_SERVER,
+        reason: "Thiếu tham số",
+      });
+      return;
+    }
+    await publish({
+      electricMeterId,
+      command: REQUEST_COMAND_MQTT.CHANGE_SERVER,
+      data: { Ser: ser, Port: port },
+    });
+  } catch (error) {
+    sendMessageFailed({
+      websocket,
+      command: RESPONSE_COMAND_SOCKET.CHANGE_SERVER,
       reason: "Có lỗi xảy ra ",
     });
     return;
