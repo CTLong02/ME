@@ -23,6 +23,8 @@ module.exports.URL_ACCOUNT = {
   signIn: "/sign-in",
   signUp: "/sign-up",
   signOut: "/sign-out",
+  getOTPForSignUp: "/otp-sign-up",
+  getOTPForSignIn: "/otp-sign-in",
   listInvitation: "/invitation-list",
 };
 

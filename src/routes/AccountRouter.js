@@ -11,10 +11,23 @@ AccountRouter.post(
   [authMiddleware],
   AccountController.signOut
 );
+
 AccountRouter.get(
   URL_ACCOUNT.listInvitation,
   [authMiddleware],
   AccountController.getListInvitation
+);
+
+AccountRouter.post(
+  URL_ACCOUNT.getOTPForSignIn,
+  [authMiddleware],
+  AccountController.getOTPForSignIn
+);
+
+AccountRouter.post(
+  URL_ACCOUNT.getOTPForSignUp,
+  [authMiddleware],
+  AccountController.getOTPForSignUp
 );
 
 module.exports = AccountRouter;
