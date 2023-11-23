@@ -1,7 +1,7 @@
 pipeline {
     stages {
         stage("pull") {
-            echo "pull"
+            echo "pullll"
         }
     }
 }
