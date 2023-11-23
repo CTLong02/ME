@@ -1,5 +1,5 @@
 node {
     stage("pull") {
-        println("pull--123")
+        println("pul--123")
     }
 }
