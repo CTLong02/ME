@@ -1,7 +1,5 @@
-pipeline {
-    stages {
-        stage("pull") {
-            echo "pull"
-        }
+node {
+    stage("pull") {
+        println("pull")
     }
 }
